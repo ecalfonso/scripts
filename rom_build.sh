@@ -13,7 +13,6 @@ fi
 
 # Set the start time
 DATE=$(date +"%Y%m%d-%T")
-#PB_KEY=fece533b53cce221dfb46538c68a992b
 
 # Set the device
 DEVICE=jflte
@@ -53,12 +52,9 @@ END_DATE=$(date +"%Y%m%d-%T")
 echo "Alerting devices that building has stopped via PushBullet..."
 if [ -e log-$DATE.out ]; then
   if tail log-$DATE.out | grep -q "Package Complete"; then
-    #PB_MSG="Package complete"
     successMsg
   else
-    #PB_MSG="Build failed"   
     errorMsg
   fi
 fi
 
-#curl -u $PB_KEY: https://api.pushbullet.com/v2/pushes -d type=note -d title="$PB_MSG for $DEVICE" -d body="build-$DATE stopped at $END_DATE" > /dev/null 2>&1
