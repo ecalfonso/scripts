@@ -24,11 +24,15 @@ initialMsg() {
 }
 
 successMsg() {
-	$(pb --note -t Package Complete for $DEVICE -m Build-$DATE)
+    # Set end time
+    END_DATE=$(date +"%Y%m%d-%T")
+	$(pb --note -t Package Complete for $DEVICE -m Build-$DATE @ $END_DATE)
 }
 
 errorMsg() {
-	$(pb --note -t Build failed for $DEVICE -m Build-$DATE)
+    # Set end time
+    END_DATE=$(date +"%Y%m%d-%T")
+	$(pb --note -t Build failed for $DEVICE -m Build-$DATE @ $END_DATE)
 }
 
 # Remove old build.prop to generate a new one
@@ -39,14 +43,14 @@ fi
 
 echo "Sending start time to devices via PushBullet...."
 initialMsg
+sleep 2
 
 # Begin the build
 echo "Starting log-$DATE.out"
 . build/envsetup.sh
 croot
 brunch $DEVICE 2>&1 | tee log-$DATE.out
-# Set end time
-END_DATE=$(date +"%Y%m%d-%T")
+sleep 2
 
 # Alert me when build completes
 echo "Alerting devices that building has stopped via PushBullet..."
