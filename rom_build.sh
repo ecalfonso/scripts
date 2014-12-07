@@ -1,64 +1,67 @@
 #!/bin/bash
 
-# Clean the build directory
-if [[ $1 == "clean" ]]; then
-  echo "Cleaning before building"
-  echo "Removed ccache..."
-  rm -rf ~/.ccache
-  echo "Making Clean..."
-  make clean
-  echo "Making Clobber..."
-  make clobber
-fi	
-
-# Set the start time
+# Set device
+DEVICE=jflte
 DATE=$(date +"%Y%m%d-%T")
 
-# Set the device
-DEVICE=jflte
+CLEAN=0
+REMOTE=0
+SYNC=0
 
-# Set complete and error messages
-# These use custom pushbullet commands
-initialMsg() {
-	$(pb --note -t Build starting for $DEVICE -m Build-$DATE)
-}
+for var in "$@"
+do
+    case "$var" in
+        clean )
+            CLEAN=1
+            ;;
+        remote )
+            REMOTE=1
+            ;;
+        sync )
+            SYNC=1
+            ;;
+    esac
+done
 
-successMsg() {
-    # Set end time
-    END_DATE=$(date +"%Y%m%d-%T")
-	$(pb --note -t Package Complete for $DEVICE -m Build-$DATE @ $END_DATE)
-}
-
-errorMsg() {
-    # Set end time
-    END_DATE=$(date +"%Y%m%d-%T")
-	$(pb --note -t Build failed for $DEVICE -m Build-$DATE @ $END_DATE)
-}
-
-# Remove old build.prop to generate a new one
-if [ -e out/target/product/$DEVICE/system/build.prop ]; then
-  echo "Removing old build.prop"
-  rm out/target/product/$DEVICE/system/build.prop
+if [[ $SYNC == 1 ]]; then
+    echo "Repo sync"
+    repo sync
 fi
 
-echo "Sending start time to devices via PushBullet...."
-initialMsg
-sleep 2
+if [[ $CLEAN == 1 ]]; then
+    echo "Cleaning build directory"
+    rm -rf ~/.ccache
+    make clean
+    make clobber
+fi
 
-# Begin the build
-echo "Starting log-$DATE.out"
+# Setup build environment
 . build/envsetup.sh
-croot
+export BUILDING_RECOVERY=false
+lunch "cm_$DEVICE-userdebug"
+
+# Start build
+START=$(date +%s.%N)
+make installclean
+echo "Starting build for $DEVICE"
+pb --note -t Starting build for $DEVICE @ $DATE
 brunch $DEVICE 2>&1 | tee log-$DATE.out
-sleep 2
+END=$(date +%s.%N)
+MIN=$(echo "($END-$START)/60"|bc)
+SEC=$(echo "($END-$START)"|bc)
 
-# Alert me when build completes
-echo "Alerting devices that building has stopped via PushBullet..."
+# Pushbullet alert when build finishes
 if [ -e log-$DATE.out ]; then
-  if tail log-$DATE.out | grep -q "Package Complete"; then
-    successMsg
-  else
-    errorMsg
-  fi
+    if tail log-$DATE.out | grep -q "Package Complete"; then
+        pb --note -t Package complete for $DEVICE -m Elapsed time: $MIN min $SEC sec
+        if [[ $REMOTE == 1 ]]; then
+            echo "Sending zip to Drive"
+            cp out/target/product/jflte/Op*.zip ~/ext_storage/Drive/ROMs/
+            cd ~/ext_storage/Drive
+            grive
+            cd ~/jflte
+        fi
+    else
+        pb --note -t Build failed for $DEVICE -m Elapsed time: $MIN min $SEC sec 
+    fi
 fi
-
