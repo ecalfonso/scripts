@@ -38,17 +38,17 @@ fi
 # Setup build environment
 . build/envsetup.sh
 export BUILDING_RECOVERY=false
-lunch "cm_$DEVICE-userdebug"
+#lunch "cm_$DEVICE-userdebug"
 
 # Start build
 START=$(date +%s.%N)
-make installclean
+#make installclean
 echo "Starting build for $DEVICE"
 pb --note -t Starting build for $DEVICE @ $DATE
 brunch $DEVICE 2>&1 | tee log-$DATE.out
 END=$(date +%s.%N)
 MIN=$(echo "($END-$START)/60"|bc)
-SEC=$(echo "($END-$START)"|bc)
+SEC=$(echo "($END-$START)%60"|bc)
 
 # Pushbullet alert when build finishes
 if [ -e log-$DATE.out ]; then
