@@ -1,11 +1,10 @@
 #!/bin/bash
 
 # Set device
-DEVICE=jflte
+DEVICE=jfltetmo
 DATE=$(date +"%Y%m%d-%T")
 
 CLEAN=0
-REMOTE=0
 SYNC=0
 
 for var in "$@"
@@ -13,9 +12,6 @@ do
     case "$var" in
         clean )
             CLEAN=1
-            ;;
-        remote )
-            REMOTE=1
             ;;
         sync )
             SYNC=1
@@ -31,13 +27,21 @@ fi
 if [[ $CLEAN == 1 ]]; then
     echo "Cleaning build directory"
     rm -rf ~/.ccache
+    rm log*.out
     make clean
     make clobber
 fi
 
 # Setup build environment
 . build/envsetup.sh
+
+# Don't build recovery
 export BUILDING_RECOVERY=false
+
+# Enable -O3 flags
+export USE_O3_OPTIMIZATIONS=true
+
+# Remove old build.prop
 if [ -e out/target/product/$DEVICE/system/build.prop ]; then
     echo "Removing old build.prop"
     rm out/target/product/$DEVICE/system/build.prop
@@ -46,7 +50,7 @@ fi
 # Start build
 START=$(date +%s.%N)
 echo "Starting build for $DEVICE"
-pb --note -t Starting build for $DEVICE @ $DATE
+pb --note -t Starting ROM build for $DEVICE @ $DATE
 brunch $DEVICE 2>&1 | tee log-$DATE.out
 END=$(date +%s.%N)
 MIN=$(echo "($END-$START)/60"|bc)
@@ -55,15 +59,8 @@ SEC=$(echo "($END-$START)%60"|bc)
 # Pushbullet alert when build finishes
 if [ -e log-$DATE.out ]; then
     if tail log-$DATE.out | grep -q "Package Complete"; then
-        pb --note -t Package complete for $DEVICE -m Elapsed time: $MIN min $SEC sec
-        if [[ $REMOTE == 1 ]]; then
-            echo "Sending zip to Drive"
-            cp out/target/product/jflte/Op*.zip ~/ext_storage/Drive/ROMs/
-            cd ~/ext_storage/Drive
-            grive
-            cd ~/jflte
-        fi
+        pb --note -t ROM complete for $DEVICE -m Elapsed time: $MIN min $SEC sec
     else
-        pb --note -t Build failed for $DEVICE -m Elapsed time: $MIN min $SEC sec 
+        pb --note -t ROM build failed for $DEVICE -m Elapsed time: $MIN min $SEC sec 
     fi
 fi
