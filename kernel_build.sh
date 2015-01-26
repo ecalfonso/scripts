@@ -2,7 +2,7 @@
 
 # Set device
 DEVICE=jfltetmo
-DATE=$(date +"%Y%m%d-%T")
+DATE=$(date +"%Y%m%d")
 
 CLEAN=0
 SYNC=0
@@ -11,11 +11,9 @@ for var in "$@"
 do
     case "$var" in
         clean )
-            CLEAN=1
-            ;;
+            CLEAN=1;;
         sync )
-            SYNC=1
-            ;;
+            SYNC=1;;
     esac
 done
 
@@ -62,6 +60,11 @@ SEC=$(echo "($END-$START)%60"|bc)
 if [ -e log-$DATE.out ]; then
     if tail log-$DATE.out | grep -q "Made boot image:"; then
         pb --note -t Kernel complete for $DEVICE -m Elapsed time: $MIN min $SEC sec
+
+        # zip up kernel
+        cp ./out/target/product/$DEVICE/boot.img ~/ext_storage/kernel/boot.img
+        cd ~/ext_storage/kernel/
+        zip -r SaberModCM12-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
     else
         pb --note -t Kernel build failed for $DEVICE -m Elapsed time: $MIN min $SEC sec 
     fi
