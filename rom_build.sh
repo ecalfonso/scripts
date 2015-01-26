@@ -39,7 +39,7 @@ fi
 export BUILDING_RECOVERY=false
 
 # Enable -O3 flags
-export USE_O3_OPTIMIZATIONS=false
+export USE_O3_OPTIMIZATIONS=true
 
 # Remove old build.prop
 if [ -e out/target/product/$DEVICE/system/build.prop ]; then
