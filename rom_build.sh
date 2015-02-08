@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Set device
-DEVICE=cm_jfltetmo-userdebug
+DEVICE=cm_jfltexx-userdebug
 DATE=$(date +"%Y%m%d-%T")
 
 CLEAN=0
 SYNC=0
-WIPE=1
+WIPE=0
 
 for var in "$@"
 do
