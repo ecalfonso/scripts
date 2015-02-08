@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Set device
-DEVICE=cm_jfltexx-userdebug
+DEVICE_FULL=cm_jflte-userdebug
+DEVICE=jflte
 DATE=$(date +"%Y%m%d-%T")
 
 CLEAN=0
@@ -37,6 +38,9 @@ if [[ $WIPE == 1 ]]; then
     make clobber
 fi
 
+# Set up CCACHE
+export USE_CCACHE=1
+
 # Setup build environment
 . build/envsetup.sh
 
@@ -53,7 +57,7 @@ fi
 START=$(date +%s.%N)
 echo "Starting build for $DEVICE"
 pb --note -t Starting ROM build for $DEVICE @ $DATE
-brunch $DEVICE 2>&1 | tee log-$DATE.out
+brunch $DEVICE_FULL 2>&1 | tee log-$DATE.out
 END=$(date +%s.%N)
 HOUR=$(echo "(($END-$START)/3600)"|bc)
 MIN=$(echo "(($END-$START)/60)%60"|bc)
