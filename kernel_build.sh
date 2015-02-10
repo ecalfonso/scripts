@@ -1,11 +1,13 @@
 #!/bin/bash
 
 # Set device
-DEVICE=jfltetmo
+DEVICE_FULL=cm_jflte-userdebug
+DEVICE=jflte
 DATE=$(date +"%Y%m%d")
 
 CLEAN=0
 SYNC=0
+WIPE=0
 
 for var in "$@"
 do
@@ -14,6 +16,8 @@ do
             CLEAN=1;;
         sync )
             SYNC=1;;
+	wipe )
+	    WIPE=1;;
     esac
 done
 
@@ -24,12 +28,20 @@ if [[ $SYNC == 1 ]]; then
 fi
 
 if [[ $CLEAN == 1 ]]; then
-    echo "Cleaning build directory"
+    echo "Fully wiping"
     rm -rf ~/.ccache
     rm log*.out
-    make clean
     make clobber
+    WIPE=0
 fi
+
+if [[ $WIPE == 1]]; then
+    echo "Cleaning build directory"
+    make installclean
+fi
+
+# Set up CCACHE
+export USE_CCACHE=1
 
 # Setup build environment
 . build/envsetup.sh
@@ -50,7 +62,7 @@ fi
 START=$(date +%s.%N)
 echo "Starting build for $DEVICE"
 pb --note -t Starting Kernel build for $DEVICE @ $DATE
-breakfast $DEVICE
+breakfast $DEVICE_FULL
 mka bootimage 2>&1 | tee log-$DATE.out
 END=$(date +%s.%N)
 MIN=$(echo "($END-$START)/60"|bc)
@@ -62,7 +74,7 @@ if [ -e log-$DATE.out ]; then
         pb --note -t Kernel complete for $DEVICE -m Elapsed time: $MIN min $SEC sec
 
         # zip up kernel
-        cp ./out/target/product/$DEVICE/boot.img ~/ext_storage/kernel/boot.img
+        cp ./out/target/product/$DEVICE/boot.img ~/kernel/boot.img
         cd ~/ext_storage/kernel/
         zip -r SaberModCM12-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
     else
