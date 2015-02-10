@@ -35,7 +35,7 @@ if [[ $CLEAN == 1 ]]; then
     WIPE=0
 fi
 
-if [[ $WIPE == 1]]; then
+if [[ $WIPE == 1 ]]; then
     echo "Cleaning build directory"
     make installclean
 fi
