@@ -32,3 +32,7 @@ for i in $REPOS
 	do
 		git clone https://github.com/xsynergy510x/"$i".git
 	done
+
+# Add my custom paths to ~/.bashrc
+export USE_CCACHE=1
+export PATH=~/.bin:~/.pushbullet:$PATH
