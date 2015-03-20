@@ -45,6 +45,14 @@ for repo in \
 		cd ..
 	done
 
+for repo in \
+	roomservice \
+	scripts	\
+	proprietary_vendor_samsung
+	do
+		git clone git@github.com:xsynergy510x/$repo
+	done
+
 # Add my custom paths to ~/.bashrc
 echo "export USE_CCACHE=1" >> ~/.bashrc
 
