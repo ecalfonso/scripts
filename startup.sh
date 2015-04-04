@@ -16,7 +16,7 @@ sudo apt-get -y install bison build-essential curl flex git gnupg gperf libesd0-
 # Create personal bin directory
 mkdir ~/.bin
 curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
-echo "git fetch upstream; git merge upstream/cm-12.0; git push" > ~/.bin/fmp
+echo "git fetch upstream; git merge upstream/cm-12.1; git push" > ~/.bin/fmp
 chmod a+x ~/.bin/repo
 chmod u+x ~/.bin/fmp
 
@@ -64,6 +64,6 @@ export PATH=~/.bin:$PATH
 # Create my build directory
 mkdir ~/cm12
 cd ~/cm12
-repo init -u https://github.com/CyanogenMod/android.git -b cm-12.0
+repo init -u https://github.com/CyanogenMod/android.git -b cm-12.1
 repo sync
 prebuilts/misc/linux-x86/ccache/ccache -M 50G
