@@ -32,6 +32,7 @@ for repo in \
 	android_device_samsung_jflte \
 	android_device_samsung_qcom-common \
 	android_frameworks_base \
+	android_hardware_qcom_display \
 	android_kernel_samsung_jf \
 	android_packages_apps_Dialer \
 	android_packages_apps_Mms-caf \
