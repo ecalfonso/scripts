@@ -46,12 +46,6 @@ export USE_CCACHE=1
 # Setup build environment
 . build/envsetup.sh
 
-# Don't build recovery
-export BUILDING_RECOVERY=false
-
-# Enable -O3 flags
-export USE_O3_OPTIMIZATIONS=true
-
 # Remove old build.prop
 if [ -e out/target/product/$DEVICE/system/build.prop ]; then
     echo "Removing old build.prop"
@@ -75,8 +69,8 @@ if [ -e log-$DATE.out ]; then
 
         # zip up kernel
         cp ./out/target/product/$DEVICE/boot.img ~/kernel/boot.img
-        cd ~/ext_storage/kernel/
-        zip -r SaberModCM12-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
+        cd ~/kernel/
+        zip -r SaberModCM12.1-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
     else
         pb --note -t Kernel build failed for $DEVICE -m Elapsed time: $MIN min $SEC sec 
     fi
