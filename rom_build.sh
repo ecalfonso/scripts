@@ -68,6 +68,7 @@ if [ -e log-$DATE.out ]; then
     if tail log-$DATE.out | grep -q "Package Complete"; then
         pb --note -t ROM complete for $DEVICE -m Elapsed time: $HOUR hr $MIN min $SEC sec
     else
-        pb --note -t ROM build failed for $DEVICE -m Elapsed time: $HOUR hr $MIN min $SEC sec 
+	LOG=$(tail log-$DATE.out)
+        pb --note -t ROM build failed for $DEVICE -m "Elapsed time: $HOUR hr $MIN min $SEC sec\n $LOG"
     fi
 fi
