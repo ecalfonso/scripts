@@ -72,6 +72,7 @@ if [ -e log-$DATE.out ]; then
         cd ~/kernel/
         zip -r SaberModCM12.1-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
     else
-        pb --note -t Kernel build failed for $DEVICE -m Elapsed time: $MIN min $SEC sec 
+	LOG=$(tail log-$DATE.out)
+        pb --note -t Kernel build failed for $DEVICE -m "Elapsed time: $MIN min $SEC sec\n $LOG" 
     fi
 fi
