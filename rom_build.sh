@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # Set device
-DEVICE_FULL=cm_jflte-userdebug
-DEVICE=jflte
 DATE=$(date +"%Y%m%d-%T")
 
 CLEAN=0
@@ -18,6 +16,10 @@ do
             WIPE=1;;
         sync )
             SYNC=1;;
+	jf )
+	    DEVICE=jflte;;
+	flo )
+	    DEVICE=flo;;
     esac
 done
 
@@ -44,9 +46,6 @@ export USE_CCACHE=1
 # Setup build environment
 . build/envsetup.sh
 
-# Don't build recovery
-export BUILDING_RECOVERY=false
-
 # Remove old build.prop
 if [ -e out/target/product/$DEVICE/system/build.prop ]; then
     echo "Removing old build.prop"
@@ -57,7 +56,7 @@ fi
 START=$(date +%s.%N)
 echo "Starting build for $DEVICE"
 pb --note -t Starting ROM build for $DEVICE @ $DATE
-brunch $DEVICE_FULL 2>&1 | tee log-$DATE.out
+brunch cm_$DEVICE-userdebug 2>&1 | tee log-$DATE.out
 END=$(date +%s.%N)
 HOUR=$(echo "(($END-$START)/3600)"|bc)
 MIN=$(echo "(($END-$START)/60)%60"|bc)
