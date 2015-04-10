@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # Set device
-DEVICE_FULL=cm_jflte-userdebug
-DEVICE=jflte
 DATE=$(date +"%Y%m%d")
 
 CLEAN=0
@@ -18,13 +16,19 @@ do
             SYNC=1;;
 	wipe )
 	    WIPE=1;;
+	jf )
+	    DEVICE=jflte;;
+	flo )
+	    DEVICE=flo;;
     esac
 done
 
 if [[ $SYNC == 1 ]]; then
     echo "Repo sync"
     repo sync device/samsung/jf-common
+    repo sync device/asus/flo
     repo sync kernel/samsung/jf
+    repo sync kernel/google/msm
 fi
 
 if [[ $CLEAN == 1 ]]; then
@@ -56,7 +60,7 @@ fi
 START=$(date +%s.%N)
 echo "Starting build for $DEVICE"
 pb --note -t Starting Kernel build for $DEVICE @ $DATE
-breakfast $DEVICE_FULL
+breakfast cm_$DEVICE-userdebug
 mka bootimage 2>&1 | tee log-$DATE.out
 END=$(date +%s.%N)
 MIN=$(echo "($END-$START)/60"|bc)
