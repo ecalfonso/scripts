@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set device
-DATE=$(date +"%Y%m%d")
+DATE=$(date +"%Y%m%d-%T")
 
 CLEAN=0
 SYNC=0
