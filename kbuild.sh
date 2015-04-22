@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set device
-DATE=$(date +"%Y%m%d-%T")
+DATE=$(date +"%Y%m%d")
 
 CLEAN=0
 SYNC=0
@@ -23,12 +23,20 @@ do
     esac
 done
 
+if [[ -z "$DEVICE" ]]; then
+    DEVICE=jflte
+fi
+
 if [[ $SYNC == 1 ]]; then
     echo "Repo sync"
-    repo sync device/samsung/jf-common
-    repo sync device/asus/flo
-    repo sync kernel/samsung/jf
-    repo sync kernel/google/msm
+    if [[ $DEVICE == "jflte" ]]; then
+        repo sync device/samsung/jf-common
+        repo sync device/asus/flo
+    fi
+    if [[ $DEVICE == "flo" ]]; then
+        repo sync kernel/samsung/jf
+        repo sync kernel/google/msm
+    fi
 fi
 
 if [[ $CLEAN == 1 ]]; then
@@ -52,7 +60,6 @@ export USE_CCACHE=1
 
 # Remove old build.prop
 if [ -e out/target/product/$DEVICE/system/build.prop ]; then
-    echo "Removing old build.prop"
     rm out/target/product/$DEVICE/system/build.prop
 fi
 
@@ -60,8 +67,8 @@ fi
 START=$(date +%s.%N)
 echo "Starting build for $DEVICE"
 pb --note -t Starting Kernel build for $DEVICE @ $DATE
-breakfast cm_$DEVICE-userdebug
-mka bootimage 2>&1 | tee log-$DATE.out
+lunch cm_$DEVICE-userdebug
+make -j5 bootimage 2>&1 | tee log-$DATE.out
 END=$(date +%s.%N)
 MIN=$(echo "($END-$START)/60"|bc)
 SEC=$(echo "($END-$START)%60"|bc)
@@ -72,11 +79,20 @@ if [ -e log-$DATE.out ]; then
         pb --note -t Kernel complete for $DEVICE -m Elapsed time: $MIN min $SEC sec
 
         # zip up kernel
-        cp ./out/target/product/$DEVICE/boot.img ~/kernel/boot.img
-        cd ~/kernel/
-        zip -r SaberModCM12.1-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
+	if [[ -d ~/kernel/$DEVICE ]]; then
+            cp ./out/target/product/$DEVICE/boot.img ~/kernel/$DEVICE/boot.img
+            cd ~/kernel/$DEVICE
+            zip -r SaberModCM12.1-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
+	else
+	    pb --note -t Kernel Complete for $DEVICE -m But no .zip directory found
+	fi
     else
 	LOG=$(grep error\: log-$DATE.out)
-        pb --note -t Kernel build failed for $DEVICE -m "Elapsed time: $MIN min $SEC sec\n $LOG" 
+	# Check if LOG is empty, there might be a forbidden warning
+	if [ -z "$LOG" ]; then
+	    LOG=$(grep forbidden warning\: log-$DATE.out)
+	fi
+        pb --note -t Kernel build failed for $DEVICE -m "Elapsed time: $MIN min $SEC sec
+$LOG" 
     fi
 fi
