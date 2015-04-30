@@ -23,6 +23,9 @@ do
     esac
 done
 
+# Setup build environment
+. build/envsetup.sh
+
 if [[ $SYNC == 1 ]]; then
     echo "Repo sync"
     repo sync
@@ -48,9 +51,6 @@ fi
 # Set up CCACHE
 export USE_CCACHE=1
 
-# Setup build environment
-. build/envsetup.sh
-
 # Remove old build.prop
 if [ -e out/target/product/$DEVICE/system/build.prop ]; then
     rm out/target/product/$DEVICE/system/build.prop
@@ -60,8 +60,7 @@ fi
 START=$(date +%s.%N)
 echo "Starting build for $DEVICE"
 pb --note -t Starting ROM build for $DEVICE @ $DATE
-lunch cm_$DEVICE-userdebug
-make -j5 bacon 2>&1 | tee log-$DATE.out
+brunch cm_$DEVICE-userdebug 2>&1 | tee log-$DATE.out
 END=$(date +%s.%N)
 HOUR=$(echo "(($END-$START)/3600)"|bc)
 MIN=$(echo "(($END-$START)/60)%60"|bc)

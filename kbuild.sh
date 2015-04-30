@@ -23,6 +23,9 @@ do
     esac
 done
 
+# Setup build environment
+. build/envsetup.sh
+
 if [[ -z "$DEVICE" ]]; then
     DEVICE=jflte
 fi
@@ -31,10 +34,10 @@ if [[ $SYNC == 1 ]]; then
     echo "Repo sync"
     if [[ $DEVICE == "jflte" ]]; then
         repo sync device/samsung/jf-common
-        repo sync device/asus/flo
+        repo sync kernel/samsung/jf
     fi
     if [[ $DEVICE == "flo" ]]; then
-        repo sync kernel/samsung/jf
+        repo sync device/asus/flo
         repo sync kernel/google/msm
     fi
 fi
@@ -43,20 +46,17 @@ if [[ $CLEAN == 1 ]]; then
     echo "Fully wiping"
     rm -rf ~/.ccache
     rm log*.out
-    make clobber
+    mka clobber
     WIPE=0
 fi
 
 if [[ $WIPE == 1 ]]; then
     echo "Cleaning build directory"
-    make installclean
+    mka installclean
 fi
 
 # Set up CCACHE
 export USE_CCACHE=1
-
-# Setup build environment
-. build/envsetup.sh
 
 # Remove old build.prop
 if [ -e out/target/product/$DEVICE/system/build.prop ]; then
@@ -68,7 +68,7 @@ START=$(date +%s.%N)
 echo "Starting build for $DEVICE"
 pb --note -t Starting Kernel build for $DEVICE @ $DATE
 lunch cm_$DEVICE-userdebug
-make -j5 bootimage 2>&1 | tee log-$DATE.out
+mka bootimage 2>&1 | tee log-$DATE.out
 END=$(date +%s.%N)
 MIN=$(echo "($END-$START)/60"|bc)
 SEC=$(echo "($END-$START)%60"|bc)
