@@ -5,6 +5,11 @@
 #	of time running this rather than trying to remember
 #	what I need to re-install
 
+### IMPORTANT ###
+#  1) Set up github SSH keys
+#  2) Run in user tmux, not root
+#################
+
 # Start at ~/
 cd ~/
 
