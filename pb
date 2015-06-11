@@ -31,6 +31,9 @@ if [[ $1 == "--set-token" ]]; then
 	else
 		echo "Succesfully added token!"
 		rm pb_tmp
+		if [ ! -d ~/.pushbullet ]; then
+			mkdir ~/.pushbullet
+		fi
 		echo $2 > $TOKEN_FILE
 		exit 0
 	fi
