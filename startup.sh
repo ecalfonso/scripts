@@ -5,11 +5,6 @@
 #	of time running this rather than trying to remember
 #	what I need to re-install
 
-### IMPORTANT ###
-#  1) Set up github SSH keys
-#  2) Run in user tmux, not root
-#################
-
 # Start at ~/
 cd ~/
 
@@ -34,10 +29,17 @@ mkdir ~/.bin
 # Get repo command
 curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
 # Create custom fetch-merge-push command
-echo "git fetch upstream/cm-12.1; git merge upstream/cm-12.1; git push" > ~/.bin/fmp
+echo "git fetch upstream cm-12.1; git merge upstream/cm-12.1; git push" > ~/.bin/fmp
 # Set permissions
 chmod a+x ~/.bin/repo
 chmod u+x ~/.bin/fmp
+
+# Configure Github
+git config --global user.email xsynergy510x@gmail.com
+git config --global user.name "Eduard Alfonso"
+git config --global push.default simple
+
+# https://help.github.com/articles/generating-ssh-keys/
 
 # Set up Github repos
 mkdir ~/github

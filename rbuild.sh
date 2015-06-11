@@ -28,19 +28,19 @@ done
 
 if [[ $SYNC == 1 ]]; then
     echo "Repo sync"
-    repo sync
+    reposync
 fi
 
 if [[ $CLEAN == 1 ]]; then
     echo "Make installclean"
-    make installclean
+    mka installclean
 fi
 
 if [[ $WIPE == 1 ]]; then
     echo "Cleaning build directory"
     rm -rf ~/.ccache
-    make clean
-    make clobber
+    mka clean
+    mka clobber
 fi
 
 # Default device is JFLTE if not specified
