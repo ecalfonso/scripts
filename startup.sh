@@ -93,7 +93,8 @@ cd ~/cm
 repo init -u https://github.com/CyanogenMod/android.git -b cm-12.1
 # Add my roomservice
 mkdir -p ~/cm/.repo/local_manifests/
-cp ~/github/roomservice/roomservice.xml ~/cm/.repo/local_manifests/
+cp ~/github/roomservice/*.xml ~/cm/.repo/local_manifests/
 # Set build environment and reposync
 . build/envsetup.sh
 reposync
+breakfast cm_jflte-userdebug
