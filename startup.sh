@@ -18,8 +18,8 @@ sudo apt-get -y install bison build-essential curl flex git gnupg gperf libesd0-
 sudo apt-get -y install g++-multilib gcc-multilib lib32ncurses5-dev lib32readline-gplv2-dev lib32z1-dev
 
 # Packages for SaberMod toolchains
-sudo apt-get -y install libcap-dev texinfo automake autoconf libgmp-dev libexpat-dev \
-	python-dev build-essential gcc-multilib g++-multilib libncurses5-dev flex bison libtool gawk;
+#sudo apt-get -y install libcap-dev texinfo automake autoconf libgmp-dev libexpat-dev \
+#	python-dev build-essential gcc-multilib g++-multilib libncurses5-dev flex bison libtool gawk;
 
 # My custom packages
 sudo apt-get -y install openssh-server git tmux curl openjdk-7-jdk vim
