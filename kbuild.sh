@@ -33,12 +33,12 @@ fi
 if [[ $SYNC == 1 ]]; then
     echo "Repo sync"
     if [[ $DEVICE == "jflte" ]]; then
-        repo sync device/samsung/jf-common
-        repo sync kernel/samsung/jf
+        reposync device/samsung/jf-common
+        reposync kernel/samsung/jf
     fi
     if [[ $DEVICE == "flo" ]]; then
-        repo sync device/asus/flo
-        repo sync kernel/google/msm
+        reposync device/asus/flo
+        reposync kernel/google/msm
     fi
 fi
 
@@ -53,6 +53,7 @@ fi
 if [[ $WIPE == 1 ]]; then
     echo "Cleaning build directory"
     mka installclean
+    rm log*.out
 fi
 
 # Set up CCACHE
@@ -82,7 +83,7 @@ if [ -e log-$DATE.out ]; then
 	if [[ -d ~/kernel/$DEVICE ]]; then
             cp ./out/target/product/$DEVICE/boot.img ~/kernel/$DEVICE/boot.img
             cd ~/kernel/$DEVICE
-            zip -r SaberModCM12.1-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
+            zip -r SaberModCM12.1-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ boot.img
 	else
 	    pb --note -t Kernel Complete for $DEVICE -m But no .zip directory found
 	fi

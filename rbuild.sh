@@ -34,6 +34,7 @@ fi
 if [[ $CLEAN == 1 ]]; then
     echo "Make installclean"
     mka installclean
+    rm log*.out
 fi
 
 if [[ $WIPE == 1 ]]; then
@@ -41,6 +42,7 @@ if [[ $WIPE == 1 ]]; then
     rm -rf ~/.ccache
     mka clean
     mka clobber
+    rm log*.out
 fi
 
 # Default device is JFLTE if not specified
