@@ -39,6 +39,8 @@ git config --global user.email xsynergy510x@gmail.com
 git config --global user.name "Eduard Alfonso"
 git config --global push.default simple
 
+# Don't forget to set SSH keys before doing this
+
 # https://help.github.com/articles/generating-ssh-keys/
 
 # Set up Github repos
@@ -51,7 +53,6 @@ for repo in \
 	android_device_asus_flo \
 	android_device_samsung_jf-common \
 	android_device_samsung_jflte \
-	android_device_samsung_qcom-common \
 	android_external_chromium_org \
 	android_external_libpng \
 	android_frameworks_base \
@@ -63,8 +64,7 @@ for repo in \
 	android_packages_apps_Mms-caf \
 	android_packages_apps_Settings \
 	android_system_core \
-	android_vendor_cm \
-	android_vendor_sabermod
+	android_vendor_cm
 	do
 		git clone git@github.com:xsynergy510x/$repo
 		cd $repo
@@ -73,8 +73,9 @@ for repo in \
 	done
 # Grab other repos
 for repo in \
-	roomservice \
 	scripts	\
+	roomservice \
+	android_vendor_sabermod \
 	proprietary_vendor_samsung
 	do
 		git clone git@github.com:xsynergy510x/$repo
@@ -87,13 +88,16 @@ echo "export USE_CCACHE=1" >> ~/.bashrc
 echo "export PATH=~/.bin:$PATH" >> ~/.bashrc
 export PATH=~/.bin:$PATH
 
+# Reload .bashrc
+source ~/.bashrc
+
 # Create my build directory
-mkdir ~/cm
-cd ~/cm
+mkdir ~/cm12
+cd ~/cm12
 repo init -u https://github.com/CyanogenMod/android.git -b cm-12.1
 # Add my roomservice
-mkdir -p ~/cm/.repo/local_manifests/
-cp ~/github/roomservice/*.xml ~/cm/.repo/local_manifests/
+mkdir -p ~/cm12/.repo/local_manifests/
+cp ~/github/roomservice/*.xml ~/cm12/.repo/local_manifests/
 # Set build environment and reposync
 . build/envsetup.sh
 reposync
