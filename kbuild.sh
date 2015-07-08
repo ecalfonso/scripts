@@ -53,7 +53,6 @@ fi
 if [[ $WIPE == 1 ]]; then
     echo "Cleaning build directory"
     mka installclean
-    rm log*.out
 fi
 
 # Set up CCACHE
@@ -83,7 +82,7 @@ if [ -e log-$DATE.out ]; then
 	if [[ -d ~/kernel/$DEVICE ]]; then
             cp ./out/target/product/$DEVICE/boot.img ~/kernel/$DEVICE/boot.img
             cd ~/kernel/$DEVICE
-            zip -r SaberModCM12.1-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ boot.img
+            zip -r SaberModCM12.1-kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
 	else
 	    pb --note -t Kernel Complete for $DEVICE -m But no .zip directory found
 	fi

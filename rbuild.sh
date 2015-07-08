@@ -42,7 +42,6 @@ if [[ $WIPE == 1 ]]; then
     rm -rf ~/.ccache
     mka clean
     mka clobber
-    rm log*.out
 fi
 
 # Default device is JFLTE if not specified
