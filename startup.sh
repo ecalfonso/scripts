@@ -86,19 +86,25 @@ echo "export USE_CCACHE=1" >> ~/.bashrc
 
 # Set up custom bin directory
 echo "export PATH=~/.bin:$PATH" >> ~/.bashrc
-export PATH=~/.bin:$PATH
+
+# Set SaberMod prebuilt dependencies
+echo "SM_PREBUILTS=~/sabermod-prebuilts;" >> ~/.bashrc
+echo "export LIBRARY_PATH=\$SM_PREBUILTS/usr/lib:\$SM_PREBUILTS/usr/lib/arm;" >> ~/.bashrc
+echo "export LD_LIBRARY_PATH=\$SM_PREBUILTS/usr/lib:\$SM_PREBUILTS/usr/lib/arm;" >> ~/.bashrc
 
 # Reload .bashrc
 source ~/.bashrc
+~/github/android_build/envsetup.sh .
 
 # Create my build directory
 mkdir ~/cm12
 cd ~/cm12
 repo init -u https://github.com/CyanogenMod/android.git -b cm-12.1
+repo sync
 # Add my roomservice
 mkdir -p ~/cm12/.repo/local_manifests/
 cp ~/github/roomservice/*.xml ~/cm12/.repo/local_manifests/
 # Set build environment and reposync
-. build/envsetup.sh
+source build/envsetup.sh
 reposync
 breakfast cm_jflte-userdebug
