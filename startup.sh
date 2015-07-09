@@ -17,11 +17,14 @@ sudo apt-get -y install bison build-essential curl flex git gnupg gperf libesd0-
 # Packages for 64 bit CM12 building
 sudo apt-get -y install g++-multilib gcc-multilib lib32ncurses5-dev lib32readline-gplv2-dev lib32z1-dev
 
-# Packages for SaberMod toolchains
-#sudo apt-get -y install libcap-dev texinfo automake autoconf libgmp-dev libexpat-dev \
+# Packages for building with LZMA compression
+sudo apt-get -y install python-dev liblzma-dev
+
+# Packages for SaberMod toolchains - NOT REQUIRED FOR BUILDING CM
+# sudo apt-get -y install libcap-dev texinfo automake autoconf libgmp-dev libexpat-dev \
 #	python-dev build-essential gcc-multilib g++-multilib libncurses5-dev flex bison libtool gawk;
 
-# My custom packages
+# My custom packages I need
 sudo apt-get -y install openssh-server git tmux curl openjdk-7-jdk vim
 
 # Create personal bin directory
@@ -35,13 +38,10 @@ chmod a+x ~/.bin/repo
 chmod u+x ~/.bin/fmp
 
 # Configure Github
+# https://help.github.com/articles/generating-ssh-keys/
 git config --global user.email xsynergy510x@gmail.com
 git config --global user.name "Eduard Alfonso"
 git config --global push.default simple
-
-# Don't forget to set SSH keys before doing this
-
-# https://help.github.com/articles/generating-ssh-keys/
 
 # Set up Github repos
 mkdir ~/github
@@ -81,7 +81,20 @@ for repo in \
 		git clone git@github.com:xsynergy510x/$repo
 	done
 
+# Download backports.lzma
+mkdir -p ~/Downloads
+cd ~/Downloads
+git clone git://github.com/peterjc/backports.lzma.git
+cd backports.lzma
+sudo python setup.py install
+cd test
+python test_lzma.py
+
+#
 # Add my custom paths to ~/.bashrc
+#
+
+# Use CCACHE
 echo "export USE_CCACHE=1" >> ~/.bashrc
 
 # Set up custom bin directory
@@ -92,15 +105,19 @@ echo "SM_PREBUILTS=~/sabermod-prebuilts;" >> ~/.bashrc
 echo "export LIBRARY_PATH=\$SM_PREBUILTS/usr/lib:\$SM_PREBUILTS/usr/lib/arm;" >> ~/.bashrc
 echo "export LD_LIBRARY_PATH=\$SM_PREBUILTS/usr/lib:\$SM_PREBUILTS/usr/lib/arm;" >> ~/.bashrc
 
+# Set up CM lzma compression variable
+# https://github.com/CyanogenMod/android_build/commit/e78b239cbe782454d6df0916dc51bbf35ede5572
+echo "export WITH_LZMA_OTA=TRUE" >> ~/.bashrc
+
 # Reload .bashrc
 source ~/.bashrc
-~/github/android_build/envsetup.sh .
 
 # Create my build directory
 mkdir ~/cm12
 cd ~/cm12
 repo init -u https://github.com/CyanogenMod/android.git -b cm-12.1
-repo sync
+~/github/android_build/envsetup.sh .
+repo sync || exit 1
 # Add my roomservice
 mkdir -p ~/cm12/.repo/local_manifests/
 cp ~/github/roomservice/*.xml ~/cm12/.repo/local_manifests/
@@ -108,3 +125,4 @@ cp ~/github/roomservice/*.xml ~/cm12/.repo/local_manifests/
 source build/envsetup.sh
 reposync
 breakfast cm_jflte-userdebug
+lunch cm_jflte-userdebug
