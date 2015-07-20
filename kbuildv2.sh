@@ -9,6 +9,11 @@ CLEAN=0
 SYNC=0
 WIPE=0
 
+# Bash colors
+RED='\033[0;31m'
+GRE='\033[0;32m'
+NC='\033[0m'
+
 # Loop through script arguments
 for var in "$@"
 do
@@ -29,7 +34,7 @@ done
 # Functions
 function elapsed_time {
     if [ -z "$1" ]; then
-        echo "elapsed_time requires start_time as a parameter";
+        echo -e "${RED}elapsed_time requires start_time as a parameter${NC}";
         exit 1;
     fi
 
@@ -38,7 +43,7 @@ function elapsed_time {
     MIN=$(echo "(($END-$1)/60)%60"|bc)
     SEC=$(echo "($END-$1)%60"|bc)
 
-    echo "Elapsed time: $HOUR hr $MIN min $SEC sec"
+    echo -e "${GRE}Elapsed time: $HOUR hr $MIN min $SEC sec${NC}"
 }
 
 function generate_log {
@@ -53,48 +58,66 @@ function generate_log {
 }
 
 function pb_error_msg {
-    pb --note -t ROM build failed during $1 -m "$(elapsed_time $START)
+    pb --note -t Kernel build failed during $1 -m "$(elapsed_time $START)
 $2"
 }
 
 # Setup build environment
 STATUS="Setting build env"
-. build/envsetup.sh || { echo "No build directory found"; pb_error_msg "$STATUS"; exit 1; }
+. build/envsetup.sh || { echo -e "${RED}No build directory found${NC}"; pb_error_msg "$STATUS"; exit 1; }
 
 if [[ $SYNC == 1 ]]; then
-    echo "Repo sync"
+    echo " "
+    echo -e "${GRE}#########################################"
+    echo "#"
+    echo "# Repo sync"
+    echo "#"
+    echo -e "#########################################${NC}"
+    echo " "
     STATUS="Repo sync"
 
     if [ -d vendor/sm ]; then
-        reposync vendor/sm || { echo "Error syncing repo"; pb_error_msg "$STATUS"; exit 1; }
+        reposync vendor/sm || { echo -e "${RED}Error syncing repo${NC}"; pb_error_msg "$STATUS"; exit 1; }
     fi
 
     if [[ $DEVICE == "jflte" ]]; then
-        reposync device/samsung/jf-common || { echo "Error syncing repo"; pb_error_msg "$STATUS"; exit 1; }
-        reposync kernel/samsung/jf || { echo "Error syncing repo"; pb_error_msg "$STATUS"; exit 1; }
+        reposync device/samsung/jf-common || { echo -e "${RED}Error syncing repo${NC}"; pb_error_msg "$STATUS"; exit 1; }
+        reposync kernel/samsung/jf || { echo -e "${RED}Error syncing repo${NC}"; pb_error_msg "$STATUS"; exit 1; }
     fi
 
     if [[ $DEVICE == "flo" ]]; then
-        reposync device/asus/flo || { echo "Error syncing repo"; pb_error_msg "$STATUS"; exit 1; }
-        reposync kernel/google/msm || { echo "Error syncing repo"; pb_error_msg "$STATUS"; exit 1; }
+        reposync device/asus/flo || { echo -e "${RED}Error syncing repo${NC}"; pb_error_msg "$STATUS"; exit 1; }
+        reposync kernel/google/msm || { echo -e "${RED}Error syncing repo${NC}"; pb_error_msg "$STATUS"; exit 1; }
     fi
 fi
 
 if [[ $WIPE == 0 && $CLEAN == 1 ]]; then
-    echo "Make installclean"
+    echo " "
+    echo -e "${GRE}#########################################"
+    echo "#"
+    echo "# Make installclean"
+    echo "#"
+    echo -e "#########################################${NC}"
+    echo " "
     STATUS="Small wipe"
-    mka installclean || { echo "Error @ mka installclean"; pb_error_msg "$STATUS"; exit 1; }
+    mka installclean || { echo -e "${RED}Error @ mka installclean${NC}"; pb_error_msg "$STATUS"; exit 1; }
     if [ -e log*.out ]; then
         rm log*.out
     fi
 fi
 
 if [[ $WIPE == 1 ]]; then
-    echo "Cleaning build directory"
+    echo " "
+    echo -e "${GRE}#########################################"
+    echo "#"
+    echo "# Cleaning build directory"
+    echo "#"
+    echo -e "#########################################${NC}"
+    echo " "
     STATUS="Full wipe"
     rm -rf ~/.ccache
-    mka clean || { echo "Error @ mka clean"; pb_error_msg "$STATUS"; exit 1; }
-    mka clobber || { echo "Error @ mka clobber"; pb_error_msg "$STATUS"; exit 1; }
+    mka clean || { echo -e "${RED}Error @ mka clean${NC}"; pb_error_msg "$STATUS"; exit 1; }
+    mka clobber || { echo -e "${RED}Error @ mka clobber${NC}"; pb_error_msg "$STATUS"; exit 1; }
     if [ -e log*.out ]; then
         rm log*.out
     fi
@@ -114,9 +137,16 @@ if [ -e out/target/product/$DEVICE/system/build.prop ]; then
 fi
 
 # Start build
-echo "Starting Kernel build for $DEVICE"
+echo " "
+echo -e "${GRE}#########################################"
+echo "#"
+echo "# Starting Kernel build for $DEVICE"
+echo "#"
+echo -e "#########################################${NC}"
+echo " "
 pb --note -t Starting Kernel build for $DEVICE @ $DATE
-mka bootimage 2>&1 | tee log-$DATE.out || { echo "Error during kernel build"; pb_error_msg "Kernel Building" $generate_log $START; exit 1; }
+lunch cm_$DEVICE-userdebug
+mka bootimage 2>&1 | tee log-$DATE.out || { echo -e "${RED}Error during kernel build${NC}"; pb_error_msg "Kernel Building" $generate_log $START; exit 1; }
 
 # Pushbullet alert when build finishes
 if [ -e log-$DATE.out ]; then
@@ -129,7 +159,7 @@ if [ -e log-$DATE.out ]; then
             cd ~/kernel/$DEVICE
             zip -r SaberModCM12.1-Kernel-$DEVICE-$DATE.zip META-INF/ kernel/ boot.img
 	else
-	    echo "No kernel directory found!"
+	    echo -e "${RED}No kernel directory found!${NC}"
 	    pb --note -t Kernel Complete for $DEVICE -m But no .zip directory found
 	fi
     fi
