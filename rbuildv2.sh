@@ -66,7 +66,7 @@ if [[ $SYNC == 1 ]]; then
     reposync || { pb_error_msg "$STATUS"; exit 1; }
 fi
 
-if [[ $CLEAN == 1 ]]; then
+if [[ $WIPE == 0 && $CLEAN == 1 ]]; then
     echo "Make installclean"
     STATUS="Small wipe"
     mka installclean || { pb_error_msg "$STATUS"; exit 1; }
@@ -99,14 +99,11 @@ fi
 # Start build
 echo "Starting build for $DEVICE"
 pb --note -t Starting ROM build for $DEVICE @ $DATE
-brunch cm_$DEVICE-userdebug 2>&1 | tee log-$DATE.out
+brunch cm_$DEVICE-userdebug 2>&1 | tee log-$DATE.out || { pb_error_msg "ROM Building" $generate_log $START; exit 1; }
 
 # Pushbullet alert when build finishes
 if [ -e log-$DATE.out ]; then
     if tail log-$DATE.out | grep -q "Package Complete"; then
-        pb --note -t ROM complete for $DEVICE -m "$elapsed_time"
-    else
-        STATUS="ROM Building"
-        pb_error_msg "$STATUS" $generate_log
+        pb --note -t ROM complete for $DEVICE -m $(elapsed_time $START)
     fi
 fi
