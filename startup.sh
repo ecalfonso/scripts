@@ -101,7 +101,7 @@ echo "export USE_CCACHE=1" >> ~/.bashrc
 echo "export PATH=~/.bin:$PATH" >> ~/.bashrc
 
 # Set SaberMod prebuilt dependencies
-echo "SM_PREBUILTS=~/sabermod-prebuilts;" >> ~/.bashrc
+echo "SM_PREBUILTS=~/.sabermod-prebuilts;" >> ~/.bashrc
 echo "export LIBRARY_PATH=\$SM_PREBUILTS/usr/lib:\$SM_PREBUILTS/usr/lib/arm;" >> ~/.bashrc
 echo "export LD_LIBRARY_PATH=\$SM_PREBUILTS/usr/lib:\$SM_PREBUILTS/usr/lib/arm;" >> ~/.bashrc
 
