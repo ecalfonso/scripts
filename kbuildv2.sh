@@ -8,6 +8,7 @@ STATUS="Initializing"
 CLEAN=0
 SYNC=0
 WIPE=0
+PREBUILT=0
 
 # Bash colors
 RED='\033[0;31m'
@@ -24,10 +25,14 @@ do
             WIPE=1;;
         sync )
             SYNC=1;;
+	prebuilt )
+	    PREBUILT=1;;
 	jf )
 	    DEVICE=jflte;;
 	flo )
 	    DEVICE=flo;;
+	* )
+	    echo -e "${RED}Unknown parameter $var\n${NC}";;
     esac
 done
 
@@ -61,6 +66,13 @@ function pb_error_msg {
     pb --note -t Kernel build failed during $1 -m "$(elapsed_time $START)
 $2"
 }
+
+# Default device is JFLTE if not specified
+if [[ -z "$DEVICE" ]]; then
+    DEVICE=jflte
+fi
+
+if [[ $PREBUILT == 0 ]]; then 
 
 # Setup build environment
 STATUS="Setting build env"
@@ -123,11 +135,6 @@ if [[ $WIPE == 1 ]]; then
     fi
 fi
 
-# Default device is JFLTE if not specified
-if [[ -z "$DEVICE" ]]; then
-    DEVICE=jflte
-fi
-
 # Set up CCACHE
 export USE_CCACHE=1
 
@@ -151,7 +158,7 @@ mka bootimage 2>&1 | tee log-$DATE.out || { echo -e "${RED}Error during kernel b
 # Pushbullet alert when build finishes
 if [ -e log-$DATE.out ]; then
     if tail log-$DATE.out | grep -q "Made boot image:"; then
-        pb --note -t Kernel complete for $DEVICE -m Elapsed time: $MIN min $SEC sec
+	pb --note -t Kernel complete for $DEVICE -m $(elapsed_time $START)
 
         # zip up kernel
 	if [[ -d ~/kernel/$DEVICE ]]; then
@@ -162,5 +169,19 @@ if [ -e log-$DATE.out ]; then
 	    echo -e "${RED}No kernel directory found!${NC}"
 	    pb --note -t Kernel Complete for $DEVICE -m But no .zip directory found
 	fi
+    fi
+fi
+
+else  # Zip up current boot.img without a rebuild
+    if [ -e ./out/target/product/$DEVICE/boot.img ]; then
+        # zip up kernel
+        if [[ -d ~/kernel/$DEVICE ]]; then
+            cp ./out/target/product/$DEVICE/boot.img ~/kernel/$DEVICE/boot.img
+            cd ~/kernel/$DEVICE
+            zip -r SaberModCM12.1-Kernel-$DEVICE-$DATE.zip META-INF/ kernel/ boot.img
+        else
+            echo -e "${RED}No kernel directory found!${NC}"
+            pb --note -t Kernel Complete for $DEVICE -m But no .zip directory found
+        fi
     fi
 fi

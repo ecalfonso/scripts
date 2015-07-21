@@ -23,6 +23,8 @@ do
 	    DEVICE=jflte;;
 	flo )
 	    DEVICE=flo;;
+	* )
+            echo -e "${RED}Unknown parameter $var\n${NC}";;
     esac
 done
 
