@@ -8,6 +8,12 @@ STATUS="Initializing"
 CLEAN=0
 SYNC=0
 WIPE=0
+KERNEL=0
+
+# Bash colors
+RED='\033[0;31m'
+GRE='\033[0;32m'
+NC='\033[0m'
 
 # Loop through script arguments
 for var in "$@"
@@ -19,6 +25,8 @@ do
             WIPE=1;;
         sync )
             SYNC=1;;
+	kernel )
+	    KERNEL=1;;
 	jf )
 	    DEVICE=jflte;;
 	flo )
@@ -31,7 +39,7 @@ done
 # Functions
 function elapsed_time {
     if [ -z "$1" ]; then
-        echo "elapsed_time requires start_time as a parameter";
+        echo -e "${RED}elapsed_time requires start_time as a parameter${NC}";
         exit 1;
     fi
 
@@ -60,29 +68,50 @@ $2"
 }
 
 # Setup build environment
-. build/envsetup.sh || { echo "No build directory found"; exit 1; }
+. build/envsetup.sh || { echo -e "${RED}No build directory found${NC}"; exit 1; }
 
 if [[ $SYNC == 1 ]]; then
-    echo "Repo sync"
+    echo " "
+    echo -e "${GRE}#########################################"
+    echo "#"
+    echo "# Repo sync"
+    echo "#"
+    echo -e "#########################################${NC}"
+    echo " "
     STATUS="Repo sync"
-    reposync || { pb_error_msg "$STATUS"; exit 1; }
+    reposync || { echo -e "${RED}Error syncing repo${NC}"; pb_error_msg "$STATUS"; exit 1; }
 fi
 
 if [[ $WIPE == 0 && $CLEAN == 1 ]]; then
-    echo "Make installclean"
+    echo " "
+    echo -e "${GRE}#########################################"
+    echo "#"
+    echo "# Make installclean"
+    echo "#"
+    echo -e "#########################################${NC}"
+    echo " "
     STATUS="Small wipe"
     mka installclean || { pb_error_msg "$STATUS"; exit 1; }
-    if [ -e log*.out ]; then
+    if ls log*.out 1> /dev/null 2>&1; then
         rm log*.out
     fi
 fi
 
 if [[ $WIPE == 1 ]]; then
-    echo "Cleaning build directory"
+    echo " "
+    echo -e "${GRE}#########################################"
+    echo "#"
+    echo "# Cleaning build directory"
+    echo "#"
+    echo -e "#########################################${NC}"
+    echo " "
     STATUS="Full wipe"
     rm -rf ~/.ccache
     mka clean || { pb_error_msg "$STATUS"; exit 1; }
     mka clobber || { pb_error_msg "$STATUS"; exit 1; }
+    if ls log*.out 1> /dev/null 2>&1; then
+        rm log*.out
+    fi
 fi
 
 # Default device is JFLTE if not specified
@@ -99,9 +128,21 @@ if [ -e out/target/product/$DEVICE/system/build.prop ]; then
 fi
 
 # Start build
-echo "Starting build for $DEVICE"
+echo " "
+echo -e "${GRE}#########################################"
+echo "#"
+echo "# Starting Kernel build for $DEVICE"
+echo "#"
+echo -e "#########################################${NC}"
+echo " "
 pb --note -t Starting ROM build for $DEVICE @ $DATE
-brunch cm_$DEVICE-userdebug 2>&1 | tee log-$DATE.out || { pb_error_msg "ROM Building" $generate_log $START; exit 1; }
+brunch cm_$DEVICE-userdebug 2>&1 | tee log-$DATE.out || { echo -e "${RED}Error during kernel build${NC}"; pb_error_msg "ROM Building" $generate_log $START; exit 1; }
+
+if [[ $KERNEL == 1 ]]; then
+    if [ -e kbuildv2.sh ]; then
+	./kbuildv2.sh prebuilt jf
+    fi
+fi
 
 # Pushbullet alert when build finishes
 if [ -e log-$DATE.out ]; then

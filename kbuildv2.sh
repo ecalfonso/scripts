@@ -48,7 +48,7 @@ function elapsed_time {
     MIN=$(echo "(($END-$1)/60)%60"|bc)
     SEC=$(echo "($END-$1)%60"|bc)
 
-    echo -e "${GRE}Elapsed time: $HOUR hr $MIN min $SEC sec${NC}"
+    echo -e "Elapsed time: $HOUR hr $MIN min $SEC sec"
 }
 
 function generate_log {
@@ -113,7 +113,7 @@ if [[ $WIPE == 0 && $CLEAN == 1 ]]; then
     echo " "
     STATUS="Small wipe"
     mka installclean || { echo -e "${RED}Error @ mka installclean${NC}"; pb_error_msg "$STATUS"; exit 1; }
-    if [ -e log*.out ]; then
+    if ls log*.out 1> /dev/null 2>&1; then
         rm log*.out
     fi
 fi
@@ -130,7 +130,7 @@ if [[ $WIPE == 1 ]]; then
     rm -rf ~/.ccache
     mka clean || { echo -e "${RED}Error @ mka clean${NC}"; pb_error_msg "$STATUS"; exit 1; }
     mka clobber || { echo -e "${RED}Error @ mka clobber${NC}"; pb_error_msg "$STATUS"; exit 1; }
-    if [ -e log*.out ]; then
+    if ls log*.out 1> /dev/null 2>&1; then
         rm log*.out
     fi
 fi
