@@ -49,7 +49,9 @@ cd ~/github
 
 # Grab my CM forks and set proper upstream
 for repo in \
+	android_art \
 	android_build \
+	android_bionic \
 	android_device_asus_flo \
 	android_device_samsung_jf-common \
 	android_device_samsung_jflte \
