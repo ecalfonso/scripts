@@ -51,7 +51,6 @@ cd ~/github
 for repo in \
 	android_art \
 	android_build \
-	android_bionic \
 	android_device_asus_flo \
 	android_device_samsung_jf-common \
 	android_device_samsung_jflte \
