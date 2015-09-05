@@ -50,12 +50,15 @@ cd ~/github
 # Grab my CM forks and set proper upstream
 for repo in \
 	android_art \
+	android_bionic \
 	android_build \
 	android_device_asus_flo \
 	android_device_samsung_jf-common \
 	android_device_samsung_jflte \
+	android_external_bluetooth_bluedroid \
 	android_external_chromium_org \
 	android_external_libpng \
+	android_frameworks_av \
 	android_frameworks_base \
 	android_hardware_qcom_display \
 	android_kernel_google_msm \
