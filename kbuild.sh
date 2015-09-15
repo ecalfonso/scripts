@@ -72,6 +72,9 @@ if [[ -z "$DEVICE" ]]; then
     DEVICE=jflte
 fi
 
+# Announce building
+pb --note -t Starting Kernel build for $DEVICE @ $DATE
+
 if [[ $PREBUILT == 0 ]]; then 
 
 # Setup build environment
@@ -151,7 +154,6 @@ echo "# Starting Kernel build for $DEVICE"
 echo "#"
 echo -e "#########################################${NC}"
 echo " "
-pb --note -t Starting Kernel build for $DEVICE @ $DATE
 lunch cm_$DEVICE-userdebug
 mka bootimage 2>&1 | tee log-$DATE.out || { echo -e "${RED}Error during kernel build${NC}"; pb_error_msg "Kernel Building" $generate_log $START; exit 1; }
 

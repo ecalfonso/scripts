@@ -67,6 +67,9 @@ function pb_error_msg {
 $2"
 }
 
+# Announce begin of build
+pb --note -t Starting ROM build for $DEVICE @ $DATE
+
 # Setup build environment
 . build/envsetup.sh || { echo -e "${RED}No build directory found${NC}"; exit 1; }
 
@@ -135,7 +138,6 @@ echo "# Starting Kernel build for $DEVICE"
 echo "#"
 echo -e "#########################################${NC}"
 echo " "
-pb --note -t Starting ROM build for $DEVICE @ $DATE
 brunch cm_$DEVICE-userdebug 2>&1 | tee log-$DATE.out || { echo -e "${RED}Error during kernel build${NC}"; pb_error_msg "ROM Building" $generate_log $START; exit 1; }
 
 if [[ $KERNEL == 1 ]]; then
