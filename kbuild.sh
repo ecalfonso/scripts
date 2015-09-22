@@ -15,6 +15,8 @@ RED='\033[0;31m'
 GRE='\033[0;32m'
 NC='\033[0m'
 
+VARS=""
+
 # Loop through script arguments
 for var in "$@"
 do
@@ -34,6 +36,8 @@ do
 	* )
 	    echo -e "${RED}Unknown parameter $var\n${NC}";;
     esac
+
+    VARS="$VARS $var"
 done
 
 # Functions
@@ -73,7 +77,7 @@ if [[ -z "$DEVICE" ]]; then
 fi
 
 # Announce building
-pb --note -t Starting Kernel build for $DEVICE @ $DATE
+pb --note -t Starting Kernel build for $DEVICE @ $DATE -m Flags: $VARS
 
 if [[ $PREBUILT == 0 ]]; then 
 
