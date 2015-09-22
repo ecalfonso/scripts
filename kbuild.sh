@@ -166,7 +166,7 @@ if [ -e log-$DATE.out ]; then
 	if [[ -d ~/kernel/$DEVICE ]]; then
             cp ./out/target/product/$DEVICE/boot.img ~/kernel/$DEVICE/boot.img
             cd ~/kernel/$DEVICE
-            zip -r SaberModCM12.1-Kernel-$DEVICE-$DATE.zip META-INF/ kernel/ boot.img
+            zip -r SaberModCM12.1-Kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
 	else
 	    echo -e "${RED}No kernel directory found!${NC}"
 	    pb --note -t Kernel Complete for $DEVICE -m But no .zip directory found
