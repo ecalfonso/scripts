@@ -5,6 +5,8 @@ DATE=$(date +"%Y%m%d")
 START=$(date +%s.%N)
 STATUS="Initializing"
 
+OUT_DIR='/home/ecalfonso/Android/Kernel'
+
 CLEAN=0
 SYNC=0
 WIPE=0
@@ -158,6 +160,7 @@ echo "# Starting Kernel build for $DEVICE"
 echo "#"
 echo -e "#########################################${NC}"
 echo " "
+STATUS="Building"
 lunch cm_$DEVICE-userdebug
 mka bootimage 2>&1 | tee log-$DATE.out || { echo -e "${RED}Error during kernel build${NC}"; pb_error_msg "Kernel Building" $generate_log $START; exit 1; }
 
@@ -170,11 +173,13 @@ if [ -e log-$DATE.out ]; then
 	if [[ -d ~/kernel/$DEVICE ]]; then
             cp ./out/target/product/$DEVICE/boot.img ~/kernel/$DEVICE/boot.img
             cd ~/kernel/$DEVICE
-            zip -r SaberModCM12.1-Kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
+            zip -r $OUT_DIR/SaberModCM12.1-Kernel-$DEVICE-$DATE.zip META-INF/ kernel/ system/ boot.img
 	else
 	    echo -e "${RED}No kernel directory found!${NC}"
 	    pb --note -t Kernel Complete for $DEVICE -m But no .zip directory found
 	fi
+    else
+      pb_error_msg "$STATUS"; exit 1;
     fi
 fi
 
@@ -184,7 +189,7 @@ else  # Zip up current boot.img without a rebuild
         if [[ -d ~/kernel/$DEVICE ]]; then
             cp ./out/target/product/$DEVICE/boot.img ~/kernel/$DEVICE/boot.img
             cd ~/kernel/$DEVICE
-            zip -r SaberModCM12.1-Kernel-$DEVICE-$DATE.zip META-INF/ kernel/ boot.img
+            zip -r $OUT_DIR/SaberModCM12.1-Kernel-$DEVICE-$DATE.zip META-INF/ kernel/ boot.img
         else
             echo -e "${RED}No kernel directory found!${NC}"
             pb --note -t Kernel Complete for $DEVICE -m But no .zip directory found

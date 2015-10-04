@@ -5,6 +5,8 @@ DATE=$(date +"%Y%m%d-%T")
 START=$(date +%s.%N)
 STATUS="Initializing"
 
+OUT_DIR='/home/ecalfonso/Android/ROM'
+
 CLEAN=0
 SYNC=0
 WIPE=0
@@ -135,6 +137,7 @@ if [ -e out/target/product/$DEVICE/system/build.prop ]; then
 fi
 
 # Start build
+STATUS="Building"
 echo " "
 echo -e "${GRE}#########################################"
 echo "#"
@@ -154,5 +157,8 @@ fi
 if [ -e log-$DATE.out ]; then
     if tail log-$DATE.out | grep -q "Package Complete"; then
         pb --note -t ROM complete for $DEVICE -m $(elapsed_time $START)
+        cp out/target/product/$DEVICE/SaberMod*.zip $OUT_DIR
+    else
+        pb_error_msg "$STATUS"; exit 1;
     fi
 fi
