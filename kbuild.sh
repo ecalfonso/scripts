@@ -147,11 +147,6 @@ fi
 # Set up CCACHE
 export USE_CCACHE=1
 
-# Remove old build.prop
-if [ -e out/target/product/$DEVICE/system/build.prop ]; then
-    rm out/target/product/$DEVICE/system/build.prop
-fi
-
 # Start build
 echo " "
 echo -e "${GRE}#########################################"
