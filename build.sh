@@ -11,23 +11,18 @@ KERNEL=0	# Set to 1 to build kernel
 ROM=0		# Set to 1 to Build ROM
 PREBUILT=0	# Whether or not to pick prebuilt boot.img
 SYNC=0		# Sync source
+TEST=0
 WIPE=0		# Fully wipe before build
 
 # Script constants
 DEVICE=jflte
 BOOT_IMG=out/target/product/$DEVICE/boot.img
-KERNEL_ZIP_FILES='kernel/samsung/jf/zip/'
-OUT_DIR='/home/ecalfonso/Android/'
-
-# Incremental build variables
-PREV_TARGET_FILES_ID=
-INC_TARGET_ZIP=out/target/product/jflte/obj/PACKAGING/target_files_intermediates/cm_jflte-target_files-$PREV_TARGET_FILES_ID.zip
+KERNEL_ZIP_DIR='kernel/samsung/jf/zip/'
+OTA_OUT_DIR='/home/ecalfonso/Android/'
+TARGET_FILES_OUT_DIR='/home/ecalfonso/target-files'
 
 # Bash colors
 RED='\033[0;31m'; GRE='\033[0;32m'; NC='\033[0m'
-
-# For incremental builds
-export INCREMENTAL_BUILD=true
 
 # Functions
 function echoStatus { 
@@ -61,7 +56,7 @@ function pbErrorMsg {
 	# $1 - Build variant
 	# $2 - Where the build failed
 	
-	$(pb --note -t $1 build failed during $2 for $DEVICE -m $elapsedTime)
+	$(pb --note -t $1 build failed during $2 for $DEVICE -m `elapsedTime`)
 	
 	exit 1
 } # pbErrorMsg
@@ -69,7 +64,7 @@ function pbErrorMsg {
 function pbSuccessMsg {
 	# $1 - Build variant
 	
-	$(pb --note -t $1 build complete for $DEVICE -m $elapsedTime)
+	$(pb --note -t $1 build complete for $DEVICE -m `elapsedTime`)
 } # pbSuccessMsg
 
 function setEnv {
@@ -104,26 +99,38 @@ function wipeTree {
 	fi
 } # wipeEnv
 
+function checkROMMake() {	
+	if [ -e logs/ROM-$DATE.log ]; then
+		if tail logs/ROM-$DATE.log | grep -q "make completed successfully"; then
+			# Send alert
+			pbSuccessMsg "ROM"
+
+			# Copy latest ota and target-files to repository
+			echo -e "${GRE}Copying OTA and target-files to repository${NC}"
+			cp `ls -t out/target/product/$DEVICE/Saber*.zip | head -1` $OTA_OUT_DIR
+			cp `ls -t out/target/product/$DEVICE/obj/PACKAGING/target_files_intermediates/cm_$DEVICE*.zip | head -1` $TARGET_FILES_OUT_DIR
+
+			exit 0
+		fi
+	fi
+	pbErrorMsg "ROM" "Building"
+	exit 1
+} # checkROMMake
+
 function buildROM {
 	echoStatus "Starting ROM build"
 	mka otapackage 2>&1 | tee logs/ROM-$DATE.log
-	
-	if [ -e ROM-$DATE.log ]; then
-		if tail ROM-$DATE.log | grep -q "make completed successfully"; then
-			pbSuccessMsg "ROM"
-		else
-			pbErrorMsg "ROM" "Building"
-			exit 1
-		fi
-	fi
 } # buildROM
 
 function packKernel {
 	if [ -e $BOOT_IMG ]; then
 		# zip up kernel
-		if [[ -d $KERNEL_ZIP_FILES ]]; then
-			zip -r $OUT_DIR/SaberModCM12.1-$KERNEL_DATE-$DEVICE-Kernel.zip $BOOT_IMG $KERNEL_ZIP_FILES/*
+		if [[ -d $KERNEL_ZIP_DIR ]]; then
+			cp $BOOT_IMG $KERNEL_ZIP_DIR
+			cd $KERNEL_ZIP_DIR
+			zip -r $OUT_DIR/SaberModCM12.1-$KERNEL_DATE-$DEVICE-Kernel.zip boot.img system/ kernel/ META-INF/
 			pbSuccessMsg "Kernel"
+			croot
 		else
 			echo -e "${RED}No kernel directory found!${NC}"
 			pbErrorMsg "Kernel" "No kernel.zip source found"
@@ -173,6 +180,8 @@ do
 			PREBUILT=1;;
 		sync)
 			SYNC=1;;
+		test )
+			TEST=1;;
 		wipe)
 			WIPE=1;;
 		*)
@@ -180,11 +189,18 @@ do
 	esac
 done
 
+if [[ $TEST == 1 ]]; then
+
+	pbSuccessMsg
+	exit 0
+fi
+
 # Begin build script
 if [[ $KERNEL == 1 || $ROM == 1 || $SYNC == 1 || $WIPE == 1 ]]; then
 	setEnv
 else
 	echo -e "${RED}Usage: $0 kernel rom sync wipe"
+	echo "	inc - Build an incremental zip (needs target-files.zip in ~/ota.zip)"
 	echo "	kernel - Build Kernel"
 	echo "	rom - build ROM"
 	echo "	sync - Sync repos"
@@ -201,16 +217,12 @@ fi
 
 if [[ $INCREMENTAL == 1 ]]; then
 	export INCREMENTAL_BUILD=true
-	export INCREMENTAL_UPGRADE_FILE=$INC_TARGET_ZIP
 fi
 
 if [[ $ROM == 1 ]]; then
 	pbBeginMsg "ROM"
 	buildROM
-	if [[ $KERNEL == 1 ]]; then
-		buildKernel "prebuilt"
-		exit 0
-	fi
+	checkROMMake
 fi
 
 if [[ $KERNEL == 1 || $PREBUILT == 1 ]]; then
