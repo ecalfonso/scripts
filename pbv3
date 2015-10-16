@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Variables _________________________________________________________________
+
+# Pushbullet Account Token
+TOKEN_FILE=~/.pb.token
+
+# Bash colors
+R='\033[0;31m'; G='\033[0;32m'; NC='\033[0m'
+
+# Functions _________________________________________________________________
+
+function noToken() {
+	echo -e "${R}$0 error: No Pushbullet API token found!"
+	echo "Find your Pushbullet token at Pushbullet.com/account"
+	echo -e "Set the token with: $0 --set-token [TOKEN]${NC}"
+
+	exit 1
+}
+
+function usage() {
+        echo -e "${R}$0 usage:"
+        echo "	$0 \"Title text\" \"Message text\""
+        echo -e "	$0 --set-token [TOKEN]${NC}"
+
+        exit 1
+}
+
+# Begin script _________________________________________________________________
+
+# Not enough arguments
+if [[ $# -lt 1 ]]; then
+	usage
+fi
+
+# Set token
+if [[ $1 == "--set-token" ]]; then
+
+	#test token first, token should be $2
+	curl -u $2: https://api.pushbullet.com/v2/pushes -d type=note -d title="Successfully added token" > pb_tmp 2> /dev/null
+	if grep -q error pb_tmp; then
+		echo "Invalid token. Check if the token is correct."
+		rm pb_tmp
+		exit 1
+	else
+		echo "Succesfully added token!"
+		rm pb_tmp
+		echo $2 > $TOKEN_FILE
+		exit 0
+	fi
+fi
+
+# Check if API key is set
+if [[ ! -f $TOKEN_FILE ]]; then
+	noToken
+else
+	TOKEN=$(cat $TOKEN_FILE)
+fi
+
+# Check if silenced
+if [[ $1 == "-s" || $1 == "--silent" ]]; then
+	SILENT=1
+	shift
+fi
+
+# Echo success
+if [[ $SILENT != 1 ]]; then
+	echo -e "${G}Sending...${NC}"
+	echo -e "${G}Title:${NC} $1"
+	if [[ ! -z $2 ]]; then
+		echo -e "${G}Message:${NC} $2"
+	fi
+fi
+
+# Build the Pushbullet message
+curl -u $TOKEN: https://api.pushbullet.com/v2/pushes -d type=note -d title="$1" -d body="$2" 1> /dev/null 2>&1
