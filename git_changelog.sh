@@ -5,8 +5,8 @@
 DATE=$(date +"%Y%m%d")
 LOGNAME="changelog.$DATE"
 
-# Last changelog time
-LAST_RUN=`cat .changelog_last_run`
+# Last changelog time format: yyyy-m-d
+LAST_RUN="2015-9-13"
 
 # Remember the top of the source tree
 HOME=`pwd`
@@ -24,7 +24,7 @@ do
 	dir=`echo "${dir:2:-5}"`
 
 	# Check if there's any recent commit
-	GITLOG=`git log --oneline --after="$LAST_RUN" --before="2015-9-23" | cat`
+	GITLOG=`git log --oneline --after="$LAST_RUN" | cat`
 	NUM=$(echo "$GITLOG" | wc -l)
 
 	if [[ $NUM -gt 1 ]]; then

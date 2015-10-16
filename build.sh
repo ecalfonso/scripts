@@ -8,6 +8,7 @@ START=$(date +%s.%N)
 # Initialize build variables
 INCREMENTAL=0	# For incremental OTAs
 KERNEL=0	# Set to 1 to build kernel
+RELEASE=0	# To move output zips to final dir or not
 ROM=0		# Set to 1 to Build ROM
 PREBUILT=0	# Whether or not to pick prebuilt boot.img
 SYNC=0		# Sync source
@@ -17,9 +18,9 @@ WIPE=0		# Fully wipe before build
 # Script constants
 DEVICE=jflte
 BOOT_IMG=out/target/product/$DEVICE/boot.img
-KERNEL_ZIP_DIR='kernel/samsung/jf/zip/'
-OTA_OUT_DIR='/home/ecalfonso/Android/'
-TARGET_FILES_OUT_DIR='/home/ecalfonso/target-files'
+KERNEL_ZIP_DIR=kernel/samsung/jf/zip/
+OUT_DIR=/home/ecalfonso/Android/
+TARGET_FILES_OUT_DIR=/home/ecalfonso/target-files/
 
 # Bash colors
 RED='\033[0;31m'; GRE='\033[0;32m'; NC='\033[0m'
@@ -105,11 +106,12 @@ function checkROMMake() {
 			# Send alert
 			pbSuccessMsg "ROM"
 
-			# Copy latest ota and target-files to repository
-			echo -e "${GRE}Copying OTA and target-files to repository${NC}"
-			cp `ls -t out/target/product/$DEVICE/Saber*.zip | head -1` $OTA_OUT_DIR
-			cp `ls -t out/target/product/$DEVICE/obj/PACKAGING/target_files_intermediates/cm_$DEVICE*.zip | head -1` $TARGET_FILES_OUT_DIR
-
+			if [[ $RELEASE == 1 ]]; then
+				# Copy latest ota and target-files to repository
+				echo -e "${GRE}Copying OTA and target-files to repository${NC}"
+				cp `ls -t out/target/product/$DEVICE/Saber*.zip | head -1` $OUT_DIR
+				cp `ls -t out/target/product/$DEVICE/obj/PACKAGING/target_files_intermediates/cm_$DEVICE*.zip | head -1` $TARGET_FILES_OUT_DIR
+			fi
 			exit 0
 		fi
 	fi
@@ -152,11 +154,12 @@ function buildKernel {
 			mka bootimage 2>&1 | tee logs/Kernel-$DATE.log
 			
 			# Pushbullet alert when build finishes
-			if [ -e Kernel-$DATE.log ]; then
+			if [ -e logs/Kernel-$DATE.log ]; then
 				if tail Kernel-$DATE.log | grep -q "make completed successfully"; then
 					pbSuccessMsg "Kernel"
 				else
 					pbErrorMsg "Kernel" "Building"
+					exit 1
 				fi
 			fi
 			;;
@@ -174,8 +177,12 @@ do
 			INCREMENTAL=1;;
 		kernel)
 			KERNEL=1;;
+		release)
+			RELEASE=1;;
 		rom)
 			ROM=1;;
+		odex)
+			export WITH_DEXPREOPT := true;;
 		prebuilt)
 			PREBUILT=1;;
 		sync)
@@ -226,7 +233,7 @@ if [[ $ROM == 1 ]]; then
 fi
 
 if [[ $KERNEL == 1 || $PREBUILT == 1 ]]; then
-	if [[ $PREBUILT == 1 ]]; then
+	if [[ $PREBUILT == 1 || $ROM == 1 ]]; then
 		buildKernel "prebuilt"
 	else
 		pbBeginMsg "Kernel"
