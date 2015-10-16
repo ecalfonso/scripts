@@ -50,14 +50,14 @@ function elapsedTime {
 function pbBeginMsg {
 	# $1 - Build variant
 	
-	$(pb --note -t Starting $1 build for $DEVICE @ $DATE)
+	$(pb "Starting $1 build for $DEVICE @ $DATE")
 } # pbBeginMsg
 
 function pbErrorMsg {
 	# $1 - Build variant
 	# $2 - Where the build failed
 	
-	$(pb --note -t $1 build failed during $2 for $DEVICE -m `elapsedTime`)
+	$(pb "$1 build failed during $2 for $DEVICE" `elapsedTime`)
 	
 	exit 1
 } # pbErrorMsg
@@ -65,7 +65,7 @@ function pbErrorMsg {
 function pbSuccessMsg {
 	# $1 - Build variant
 	
-	$(pb --note -t $1 build complete for $DEVICE -m `elapsedTime`)
+	$(pb "$1 build complete for $DEVICE" `elapsedTime`)
 } # pbSuccessMsg
 
 function setEnv {
