@@ -11,17 +11,17 @@ R='\033[0;31m'; G='\033[0;32m'; NC='\033[0m'
 # Functions _________________________________________________________________
 
 function noToken() {
-	echo -e "${R}$0 error: No Pushbullet API token found!"
+	echo -e "${R}pb error: No Pushbullet API token found!"
 	echo "Find your Pushbullet token at Pushbullet.com/account"
-	echo -e "Set the token with: $0 --set-token [TOKEN]${NC}"
+	echo -e "Set the token with: pb --set-token [TOKEN]${NC}"
 
 	exit 1
 }
 
 function usage() {
-        echo -e "${R}$0 usage:"
-        echo "	$0 \"Title text\" \"Message text\""
-        echo -e "	$0 --set-token [TOKEN]${NC}"
+        echo -e "${R}pb usage:"
+        echo "	pb \"Title text\" \"Message text\""
+        echo -e "	pb --set-token [TOKEN]${NC}"
 
         exit 1
 }
