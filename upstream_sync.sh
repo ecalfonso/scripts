@@ -1,40 +1,31 @@
 #!/bin/bash
+# Script in the github repository directory
+# Iterates through each repo, looking for the UPSTREAM file
+# Fetches upstream and syncs, exits of failure
 
-# Put all git directories into array
-array=(`ls -1 -d ./*/`)
+# Bash colors
+R='\033[0;31m'; G='\033[0;32m'; NC='\033[0m'
 
-# iterate through directories
-for i in ${array[*]}; do
-	if [[ -d "./$1" ]]; then
-		# Go in
-		cd $i
-		# Check if it has git
-		if [[ -d ".git" ]]; then
-			# Print out current directory
-			pwd
-			git fetch upstream &> tmp
+# ____ Functions ____
+function syncRepo() {
+	UPSTREAM=$(sed '1q;d' UPSTREAMS)
+	BRANCH=$(sed '2q;d' UPSTREAMS)
 
-			# If fetch'd cm-11.0 updates
-			if cat tmp | grep -q "stable/cm-11.0"; then
-				echo "Needs updates"
-				# Attempt to merge
-				# git merge upstream/cm-11.0 &> tmp2
-                git merge upstream/cm-11.0 2>&1 | tee tmp2				
+	echo $UPSTREAM
+	echo $BRANCH
 
-				# Check for merge errors
-				if 	cat tmp2 | grep -q "error"; then
-					echo "Merge conflicts"
-					rm tmp2
-					exit 1
-				fi
-				rm tmp
-				rm tmp2	
-				# Assuming merge was good, push to git
-				git push
+	git fetch $UPSTREAM $BRANCH || exit 1
+	git merge --no-edit upstream/$BRANCH || exit 1
+	git push || exit 1
+} # syncRepo()
 
-			fi # if cat tmp
-			rm tmp
-		fi # if -d git
+# ____ Begin script ____
+for repo in `ls | grep android_`
+do
+	if [[ -e $repo/UPSTREAMS ]]
+	then
+		cd $repo
+		syncRepo
 		cd ..
-	fi # if -d ./$1
+	fi
 done
