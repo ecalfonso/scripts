@@ -52,8 +52,9 @@ for repo in \
 	android_art \
 	android_bionic \
 	android_build \
-	android_device_samsung_jf-common \
 	android_device_samsung_jflte \
+	android_device_samsung_jf-common \
+	android_device_samsung_qcom-common \
 	android_external_bluetooth_bluedroid \
 	android_external_chromium_org \
 	android_external_libpng \
