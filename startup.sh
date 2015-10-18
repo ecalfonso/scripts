@@ -31,11 +31,8 @@ sudo apt-get -y install openssh-server git tmux curl openjdk-7-jdk vim
 mkdir ~/.bin
 # Get repo command
 curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
-# Create custom fetch-merge-push command
-echo "git fetch upstream cm-12.1; git merge upstream/cm-12.1; git push" > ~/.bin/fmp
 # Set permissions
 chmod a+x ~/.bin/repo
-chmod u+x ~/.bin/fmp
 
 # Configure Github
 # https://help.github.com/articles/generating-ssh-keys/
@@ -54,8 +51,6 @@ for repo in \
 	android_build \
 	android_device_samsung_jflte \
 	android_device_samsung_jf-common \
-	android_device_samsung_qcom-common \
-	android_external_bluetooth_bluedroid \
 	android_external_chromium_org \
 	android_external_libpng \
 	android_frameworks_base \
@@ -98,14 +93,11 @@ python test_lzma.py
 
 # Use CCACHE
 echo "export USE_CCACHE=1" >> ~/.bashrc
+export ANDROID_CCACHE_DIR="$HOME/.ccache"
+export ANDROID_CCACHE_SIZE="50G"
 
 # Set up custom bin directory
 echo "export PATH=~/.bin:$PATH" >> ~/.bashrc
-
-# Set SaberMod prebuilt dependencies
-echo "SM_PREBUILTS=~/.sabermod-prebuilts;" >> ~/.bashrc
-echo "export LIBRARY_PATH=\$SM_PREBUILTS/usr/lib:\$SM_PREBUILTS/usr/lib/arm;" >> ~/.bashrc
-echo "export LD_LIBRARY_PATH=\$SM_PREBUILTS/usr/lib:\$SM_PREBUILTS/usr/lib/arm;" >> ~/.bashrc
 
 # Set up CM lzma compression variable
 # https://github.com/CyanogenMod/android_build/commit/e78b239cbe782454d6df0916dc51bbf35ede5572
