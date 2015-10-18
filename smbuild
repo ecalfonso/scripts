@@ -50,14 +50,14 @@ function elapsedTime {
 function pbBeginMsg {
 	# $1 - Build variant
 	
-	$(pb "Starting $1 build for $DEVICE @ $DATE")
+	pb -s "Starting $1 build for $DEVICE @ $DATE"
 } # pbBeginMsg
 
 function pbErrorMsg {
 	# $1 - Build variant
 	# $2 - Where the build failed
 	
-	$(pb "$1 build failed during $2 for $DEVICE" `elapsedTime`)
+	pb -s "$1 build failed during $2 for $DEVICE" "$(elapsedTime)"
 	
 	exit 1
 } # pbErrorMsg
@@ -65,7 +65,7 @@ function pbErrorMsg {
 function pbSuccessMsg {
 	# $1 - Build variant
 	
-	$(pb "$1 build complete for $DEVICE" `elapsedTime`)
+	pb -s "$1 build complete for $DEVICE" "$(elapsedTime)"
 } # pbSuccessMsg
 
 function setEnv {
@@ -84,7 +84,7 @@ function setEnv {
 function syncTree {
 	echoStatus "Syncing repos"
 
-	reposync || {
+	reposync --force-sync || {
 		echo -e "${RED}Error syncing repo${NC}"
 		pbErrorMsg " " "Repo sync"
 	}
@@ -93,7 +93,7 @@ function syncTree {
 function wipeTree {
 	echoStatus "Cleaning build directory"
 
-	rm -rf ~/.ccache > /dev/null 2>&1 || { echo -e "${RED}Error removing ccache${NC}"; pbErrorMsg " " "Ccache removal"; }
+	rm -rf ~/cm13/.ccache > /dev/null 2>&1 || { echo -e "${RED}Error removing ccache${NC}"; pbErrorMsg " " "Ccache removal"; }
 	mka clean > /dev/null 2>&1 || { echo -e "${RED}Error making clean${NC}"; pbErrorMsg " " "Making Clean"; }
 	if ls logs/*.log 1> /dev/null 2>&1; then
 		rm logs/*.log
@@ -181,8 +181,6 @@ do
 			RELEASE=1;;
 		rom)
 			ROM=1;;
-		odex)
-			export WITH_DEXPREOPT := true;;
 		prebuilt)
 			PREBUILT=1;;
 		sync)
@@ -197,7 +195,6 @@ do
 done
 
 if [[ $TEST == 1 ]]; then
-
 	pbSuccessMsg
 	exit 0
 fi
