@@ -53,6 +53,7 @@ for repo in \
 	android_device_samsung_jf-common \
 	android_external_chromium_org \
 	android_external_libpng \
+	android_frameworks_av \
 	android_frameworks_base \
 	android_hardware_qcom_display \
 	android_kernel_samsung_jf \
