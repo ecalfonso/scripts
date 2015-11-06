@@ -1,18 +1,20 @@
 #!/bin/bash
 # Goes through all repos to generate cahngelog
 
-# Logging variables
-DATE=$(date +"%Y%m%d")
-LOGNAME="changelog.$DATE"
-
-# Last changelog time format: yyyy-m-d
-LAST_RUN="2015-9-13"
+# Last changelog time format: yyyy-mm-dd
+if [[ -z $1 ]]; then
+	echo "$0 missing time argument"
+	echo "	usage: $0 yyyy-mm-dd"
+	exit 1
+else
+	TIME_BEGIN=$1
+fi
 
 # Remember the top of the source tree
 HOME=`pwd`
 
 # Generate changelog
-echo "Generating git log since $LAST_RUN" > $LOGNAME
+echo "Generating git log since $TIME_BEGIN" > $LOGNAME
 
 # Traverse source tree
 for dir in `find . -type d -name \.git`;
@@ -24,7 +26,7 @@ do
 	dir=`echo "${dir:2:-5}"`
 
 	# Check if there's any recent commit
-	GITLOG=`git log --oneline --after="$LAST_RUN" | cat`
+	GITLOG=`git log --oneline --after="$TIME_BEGIN" | cat`
 	NUM=$(echo "$GITLOG" | wc -l)
 
 	if [[ $NUM -gt 1 ]]; then

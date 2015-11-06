@@ -12,15 +12,28 @@ RELEASE=0	# To move output zips to final dir or not
 ROM=0		# Set to 1 to Build ROM
 PREBUILT=0	# Whether or not to pick prebuilt boot.img
 SYNC=0		# Sync source
-TEST=0
 WIPE=0		# Fully wipe before build
 
 # Script constants
-DEVICE=jflte
 BOOT_IMG=out/target/product/$DEVICE/boot.img
+DEVICE=jflte
 KERNEL_ZIP_DIR=kernel/samsung/jf/zip/
+LOG_DIR=logs/
 OUT_DIR=/home/ecalfonso/Android/
 TARGET_FILES_OUT_DIR=/home/ecalfonso/target-files/
+
+# Directory check
+if [[ ! -d $LOG_DIR ]]; then
+	mkdir $LOG_DIR
+fi
+
+if [[ ! -d $OUT_DIR ]]; then
+	mkdir $OUT_DIR
+fi
+
+if [[ ! -d $TARGET_FILES_OUT_DIR ]]; then
+	mkdir $TARGET_FILES_OUT_DIR
+fi
 
 # Bash colors
 RED='\033[0;31m'; GRE='\033[0;32m'; NC='\033[0m'
@@ -49,14 +62,12 @@ function elapsedTime {
 
 function pbBeginMsg {
 	# $1 - Build variant
-	
 	pb -s "Starting $1 build for $DEVICE @ $DATE"
 } # pbBeginMsg
 
 function pbErrorMsg {
 	# $1 - Build variant
 	# $2 - Where the build failed
-	
 	pb -s "$1 build failed during $2 for $DEVICE" "$(elapsedTime)"
 	
 	exit 1
@@ -64,12 +75,15 @@ function pbErrorMsg {
 
 function pbSuccessMsg {
 	# $1 - Build variant
-	
 	pb -s "$1 build complete for $DEVICE" "$(elapsedTime)"
 } # pbSuccessMsg
 
 function setEnv {
 	echoStatus "Setting Environment"
+
+	if [[ -e out/target/product/$DEVICE/system/build.prop ]]; then
+		rm out/target/product/$DEVICE/system/build.prop;
+	fi
 
 	if [ ! -f build/envsetup.sh ];
 	then
@@ -93,16 +107,16 @@ function syncTree {
 function wipeTree {
 	echoStatus "Cleaning build directory"
 
-	rm -rf ~/cm13/.ccache > /dev/null 2>&1 || { echo -e "${RED}Error removing ccache${NC}"; pbErrorMsg " " "Ccache removal"; }
+	rm -rf $ANDROID_CCACHE_DIR > /dev/null 2>&1 || { echo -e "${RED}Error removing ccache${NC}"; pbErrorMsg " " "Ccache removal"; }
 	mka clean > /dev/null 2>&1 || { echo -e "${RED}Error making clean${NC}"; pbErrorMsg " " "Making Clean"; }
-	if ls logs/*.log 1> /dev/null 2>&1; then
-		rm logs/*.log
+	if ls $LOG_DIR/*.log 1> /dev/null 2>&1; then
+		rm $LOG_DIR/*.log
 	fi
 } # wipeEnv
 
 function checkROMMake() {	
-	if [ -e logs/ROM-$DATE.log ]; then
-		if tail logs/ROM-$DATE.log | grep -q "make completed successfully"; then
+	if [ -e $LOG_DIR/ROM-$DATE.log ]; then
+		if tail $LOG_DIR/ROM-$DATE.log | grep -q "make completed successfully"; then
 			# Send alert
 			pbSuccessMsg "ROM"
 
@@ -112,7 +126,7 @@ function checkROMMake() {
 				cp `ls -t out/target/product/$DEVICE/Saber*.zip | head -1` $OUT_DIR
 				cp `ls -t out/target/product/$DEVICE/obj/PACKAGING/target_files_intermediates/cm_$DEVICE*.zip | head -1` $TARGET_FILES_OUT_DIR
 			fi
-			exit 0
+			return 0
 		fi
 	fi
 	pbErrorMsg "ROM" "Building"
@@ -121,7 +135,7 @@ function checkROMMake() {
 
 function buildROM {
 	echoStatus "Starting ROM build"
-	mka otapackage 2>&1 | tee logs/ROM-$DATE.log
+	mka otapackage 2>&1 | tee $LOG_DIR/ROM-$DATE.log
 } # buildROM
 
 function packKernel {
@@ -131,7 +145,6 @@ function packKernel {
 			cp $BOOT_IMG $KERNEL_ZIP_DIR
 			cd $KERNEL_ZIP_DIR
 			zip -r $OUT_DIR/SaberModCM12.1-$KERNEL_DATE-$DEVICE-Kernel.zip boot.img system/ kernel/ META-INF/
-			pbSuccessMsg "Kernel"
 			croot
 		else
 			echo -e "${RED}No kernel directory found!${NC}"
@@ -151,11 +164,11 @@ function buildKernel {
 			;;
 		*)
 			echoStatus "Starting Kernel build"
-			mka bootimage 2>&1 | tee logs/Kernel-$DATE.log
+			mka bootimage 2>&1 | tee $LOG_DIR/Kernel-$DATE.log
 			
 			# Pushbullet alert when build finishes
-			if [ -e logs/Kernel-$DATE.log ]; then
-				if tail Kernel-$DATE.log | grep -q "make completed successfully"; then
+			if [ -e $LOG_DIR/Kernel-$DATE.log ]; then
+				if tail $LOG_DIR/Kernel-$DATE.log | grep -q "make completed successfully"; then
 					pbSuccessMsg "Kernel"
 				else
 					pbErrorMsg "Kernel" "Building"
@@ -185,8 +198,6 @@ do
 			PREBUILT=1;;
 		sync)
 			SYNC=1;;
-		test )
-			TEST=1;;
 		wipe)
 			WIPE=1;;
 		*)
@@ -194,25 +205,30 @@ do
 	esac
 done
 
-if [[ $TEST == 1 ]]; then
-	pbSuccessMsg
-	exit 0
-fi
-
 # Begin build script
-if [[ $KERNEL == 1 || $ROM == 1 || $SYNC == 1 || $WIPE == 1 ]]; then
+if [[ $KERNEL == 1 || $PREBUILT == 1 || $ROM == 1 ]]; then
 	setEnv
 else
 	echo -e "${RED}Usage: $0 kernel rom sync wipe"
-	echo "	inc - Build an incremental zip (needs target-files.zip in ~/ota.zip)"
-	echo "	kernel - Build Kernel"
-	echo "	rom - build ROM"
-	echo "	sync - Sync repos"
-	echo -e "	wipe - Clean build directory${NC}"
+	echo "	kernel	 Build Kernel"
+	echo "	rom	 build ROM"
+	echo " "
+	echo "	inc	 Build an incremental zip (needs target-files.zip in ~/ota.zip)"
+	echo "	release	 Copy generated OTA and target-files to storage"
+	echo "	sync	 Sync repos"
+	echo -e "	wipe	 Clean build directory${NC}"
 fi
 
 if [[ $SYNC == 1 ]]; then
-	syncTree
+	if [[ $ROM == 1 ]]; then
+		# Sync everything
+		syncTree
+	else
+		# Sync kernel stuff only
+		repo sync kernel/samsung/jf
+		repo sync device/samsung/jf-common
+		repo sync vendor/sm
+	fi
 fi
 
 if [[ $WIPE == 1 ]]; then 
@@ -220,7 +236,12 @@ if [[ $WIPE == 1 ]]; then
 fi
 
 if [[ $INCREMENTAL == 1 ]]; then
-	export INCREMENTAL_BUILD=true
+	if [[ -e ~/ota.zip ]]; then
+		export INCREMENTAL_BUILD=true
+	else
+		echo -e "${RED}No previous target-file.zip found in ~/ota.zip${NC}"
+		exit 1
+	fi
 fi
 
 if [[ $ROM == 1 ]]; then
