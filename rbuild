@@ -6,6 +6,7 @@ KERNEL_DATE=$(date +"%Y%m%d")
 START=$(date +%s.%N)
 
 # Initialize build variables
+ALL=0		# To build all jf variants
 RELEASE=0	# To move output zips to final dir or not
 ROM=0		# Set to 1 to Build ROM
 SYNC=0		# Sync source
@@ -94,15 +95,15 @@ function wipeTree {
 } # wipeEnv
 
 function checkROMMake() {	
-	if [ -e logs/ROM-$DATE.log ]; then
-		if tail logs/ROM-$DATE.log | grep -q "make completed successfully"; then
+	if [ -e logs/$DEVICE-$DATE.log ]; then
+		if tail logs/$DEVICE-$DATE.log | grep -q "make completed successfully"; then
 			# Send alert
 			pbSuccessMsg "ROM"
 
 			if [[ $RELEASE == 1 ]]; then
 				# Copy latest ota and target-files to repository
 				echo -e "${GRE}Copying OTA to repository${NC}"
-				cp `ls -t out/target/product/$DEVICE/*.zip | head -1` $OUT_DIR
+				cp `ls -t out/target/product/$DEVICE/*$DEVICE*.zip | head -1` $OUT_DIR
 			fi
 			exit 0
 		fi
@@ -113,39 +114,33 @@ function checkROMMake() {
 
 function buildROM {
 	echoStatus "Starting ROM build"
-	mka otapackage 2>&1 | tee logs/ROM-$DATE.log
+	mka otapackage 2>&1 | tee logs/$DEVICE-$DATE.log
 } # buildROM
 
 # Loop through arguments
 for var in "$@"
 do
 	case "$var" in
-		release)
-			RELEASE=1;;
-		rom)
-			ROM=1;;
-		sync)
-			SYNC=1;;
-		wipe)
-			WIPE=1;;
-		*)
-            		echo -e "${RED}Unknown parameter $var\n${NC}";;
+		all) ALL=1;;
+		release) RELEASE=1;;
+		rom) ROM=1;;
+		sync) SYNC=1;;
+		wipe) WIPE=1;;
+		*) echo -e "${RED}Unknown parameter $var\n${NC}";;
 	esac
 done
 
-if [[ $TEST == 1 ]]; then
-	pbSuccessMsg
-	exit 0
-fi
-
 # Begin build script
-if [[ $KERNEL == 1 || $ROM == 1 || $SYNC == 1 || $WIPE == 1 ]]; then
+if [[ $ROM == 1 ]]; then
 	setEnv
 else
 	echo -e "${RED}Usage: $0 kernel rom sync wipe"
+	echo "	all - build for all variants"
+	echo "	release - copy ota to output dir"
 	echo "	rom - build ROM"
 	echo "	sync - Sync repos"
 	echo -e "	wipe - Clean build directory${NC}"
+	exit 1
 fi
 
 if [[ $SYNC == 1 ]]; then
@@ -157,7 +152,22 @@ if [[ $WIPE == 1 ]]; then
 fi
 
 if [[ $ROM == 1 ]]; then
-	pbBeginMsg "ROM"
-	buildROM
-	checkROMMake
+	if [[ $ALL != 1  ]]; then
+		# Build jfltegsm only
+		pbBeginMsg "ROM"
+		buildROM
+		checkROMMake
+	else
+		# Build all variants
+		for DEVICE in \
+			jfltegsm \
+			jfltespr \
+			jflteusc \
+			jfltevzw
+			do
+				pbBeginMsg "ROM"
+               			buildROM
+                		checkROMMake
+			done
+	fi
 fi
