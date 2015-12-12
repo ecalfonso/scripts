@@ -3,7 +3,6 @@
 # Set time
 DATE=$(date +"%Y%m%d-%T")
 KERNEL_DATE=$(date +"%Y%m%d")
-START=$(date +%s.%N)
 
 # Initialize build variables
 ALL=0		# To build all jf variants
@@ -72,7 +71,6 @@ function setEnv {
 	fi
 
 	. build/envsetup.sh >/dev/null 2>&1
-	lunch cm_$DEVICE-userdebug >/dev/null 2>&1
 } # setEnv
 
 function syncTree {
@@ -105,7 +103,7 @@ function checkROMMake() {
 				echo -e "${GRE}Copying OTA to repository${NC}"
 				cp `ls -t out/target/product/$DEVICE/*$DEVICE*.zip | head -1` $OUT_DIR
 			fi
-			exit 0
+			return 0
 		fi
 	fi
 	pbErrorMsg "ROM" "Building"
@@ -114,9 +112,20 @@ function checkROMMake() {
 
 function buildROM {
 	echoStatus "Starting ROM build"
+	lunch cm_$DEVICE-userdebug >/dev/null 2>&1
 	mka otapackage 2>&1 | tee logs/$DEVICE-$DATE.log
 } # buildROM
 
+# Trap handling
+trap ctrl_c INT
+function ctrl_c() {
+	echo -e "{$RED}** User aborted!!!${NC}"
+	pb -s "User aborted during $DEVICE build!"
+}
+
+#
+# BEGIN SCRIPT
+#
 # Loop through arguments
 for var in "$@"
 do
@@ -152,19 +161,19 @@ if [[ $WIPE == 1 ]]; then
 fi
 
 if [[ $ROM == 1 ]]; then
-	if [[ $ALL != 1  ]]; then
 		# Build jfltegsm only
+		START=$(date +%s.%N)
 		pbBeginMsg "ROM"
 		buildROM
 		checkROMMake
-	else
+	if [[ $ALL == 1  ]]; then
 		# Build all variants
 		for DEVICE in \
-			jfltegsm \
 			jfltespr \
 			jflteusc \
 			jfltevzw
 			do
+				START=$(date +%s.%N)
 				pbBeginMsg "ROM"
                			buildROM
                 		checkROMMake
