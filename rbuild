@@ -5,6 +5,7 @@ DATE=$(date +"%Y%m%d-%T")
 KERNEL_DATE=$(date +"%Y%m%d")
 
 # Initialize build variables
+AFH=0		# Upload to AFH
 ALL=0		# To build all jf variants
 RELEASE=0	# To move output zips to final dir or not
 ROM=0		# Set to 1 to Build ROM
@@ -12,8 +13,8 @@ SYNC=0		# Sync source
 WIPE=0		# Fully wipe before build
 
 # Script constants
-DEVICE=jfltegsm
 OUT_DIR=/home/ecalfonso/Android/
+AFH_CONFIG=AFH.txt
 
 # Bash colors
 RED='\033[0;31m'; GRE='\033[0;32m'; NC='\033[0m'
@@ -92,6 +93,12 @@ function wipeTree {
 	fi
 } # wipeEnv
 
+function buildROM {
+	echoStatus "Starting ROM build"
+	lunch cm_$DEVICE-userdebug >/dev/null 2>&1
+	mka otapackage 2>&1 | tee logs/$DEVICE-$DATE.log
+} # buildROM
+
 function checkROMMake() {	
 	if [ -e logs/$DEVICE-$DATE.log ]; then
 		if tail logs/$DEVICE-$DATE.log | grep -q "make completed successfully"; then
@@ -110,11 +117,27 @@ function checkROMMake() {
 	exit 1
 } # checkROMMake
 
-function buildROM {
-	echoStatus "Starting ROM build"
-	lunch cm_$DEVICE-userdebug >/dev/null 2>&1
-	mka otapackage 2>&1 | tee logs/$DEVICE-$DATE.log
-} # buildROM
+function uploadROM {
+	# Get AFH configs
+	if [ -e $AFH_CONFIG ]; then
+		AFH_SERVER=`sed -n '1p' $AFH_CONFIG`
+		AFH_USER=`sed -n '2p' $AFH_CONFIG`
+		AFH_PASS=`sed -n '3p' $AFH_CONFIG`
+	else
+		echo -e "${RED}No AFH config file to read from!${NC}"
+		exit 1
+	fi
+
+	# Get latest ROM
+	ROM=`ls -t out/target/product/$DEVICE/*$DEVICE*.zip | head -n 1`
+	ROM_NAME=`cd out/target/product/$DEVICE/ && ls -t *$DEVICE*.zip | head -n 1`
+	echoStatus "Uploading $ROM to AFH"
+
+	sshpass -p $AFH_PASS scp -o StrictHostKeyChecking=no $ROM $AFH_USER@$AFH_SERVER:/
+	
+	# Pushbullet notify upload is complete
+	pb -s "ROM for $DEVICE uploaded to AndroidFileHost" "$ROM_NAME"
+} # uploadROM
 
 # Trap handling
 trap ctrl_c INT
@@ -130,6 +153,7 @@ function ctrl_c() {
 for var in "$@"
 do
 	case "$var" in
+		afh) AFH=1;;
 		all) ALL=1;;
 		release) RELEASE=1;;
 		rom) ROM=1;;
@@ -144,6 +168,7 @@ if [[ $ROM == 1 ]]; then
 	setEnv
 else
 	echo -e "${RED}Usage: $0 kernel rom sync wipe"
+	echo "	afh - Upload ROM to AFH FTP"
 	echo "	all - build for all variants"
 	echo "	release - copy ota to output dir"
 	echo "	rom - build ROM"
@@ -161,22 +186,18 @@ if [[ $WIPE == 1 ]]; then
 fi
 
 if [[ $ROM == 1 ]]; then
-		# Build jfltegsm only
+	# Build all variants
+	for DEVICE in \
+		jfltegsm \
+		jfltecdma
+		do
+
 		START=$(date +%s.%N)
 		pbBeginMsg "ROM"
 		buildROM
-		checkROMMake
-	if [[ $ALL == 1  ]]; then
-		# Build all variants
-		for DEVICE in \
-			jfltespr \
-			jflteusc \
-			jfltevzw
-			do
-				START=$(date +%s.%N)
-				pbBeginMsg "ROM"
-               			buildROM
-                		checkROMMake
-			done
-	fi
+      		checkROMMake
+		if [[ $AFH == 1 ]]; then
+			uploadROM
+		fi
+	done
 fi
