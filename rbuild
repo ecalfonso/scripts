@@ -136,7 +136,7 @@ function uploadROM {
 	sshpass -p $AFH_PASS scp -o StrictHostKeyChecking=no $ROM $AFH_USER@$AFH_SERVER:/
 	
 	# Pushbullet notify upload is complete
-	pb -s "ROM for $DEVICE uploaded to AndroidFileHost" "$ROM_NAME"
+	pb -s "ROM for $DEVICE uploaded to AndroidFileHost" "$ROM_NAME MD5: `md5sum $ROM | cut -d" " -f1`"
 } # uploadROM
 
 # Trap handling
@@ -144,6 +144,7 @@ trap ctrl_c INT
 function ctrl_c() {
 	echo -e "{$RED}** User aborted!!!${NC}"
 	pb -s "User aborted during $DEVICE build!"
+	exit 1
 }
 
 #
