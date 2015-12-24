@@ -1,0 +1,236 @@
+#!/bin/bash
+
+#
+# Set today's date
+#
+DATE=$(date +"%Y%m%d-%T")
+
+#
+# Script constants
+#
+OUT_DIR=/home/ecalfonso/Android/
+LOGS_DIR=./logs
+AFH_CONFIG=~/AFH.txt
+
+#
+# Initialize build variables
+#
+AFH=0		# Upload to AFH
+CDMA=0		# Build Jfltecdma
+GSM=0		# Build Jfltegsm 
+RELEASE=0	# Copies ota.zip to OUT_DIR
+ROM=0		# Build ROM
+KERNEL=0	# Build Kernel
+SYNC=0		# Sync source
+WIPE=0		# Fully wipe before build
+
+#
+# Bash colors
+#
+RED='\033[0;31m'; GRE='\033[0;32m'; NC='\033[0m'
+
+function echoRed { # $1 - Echos red text
+	echo -e "${RED}$1${NC}" 
+}
+
+function echoGreen { # $1 - Echos green text
+	echo -e "${GRE}$1${NC}" 
+}
+
+function echoStatus { # $1 - What to echo
+	echo " "
+	echoGreen "#########################################"
+	echoGreen "#"
+	echoGreen "# $1"
+	echoGreen "#"
+	echoGreen "#########################################"
+	echo " "
+} # echoStatus
+
+#
+# Pushbullet Functions
+#
+function elapsedTime {
+    END=$(date +%s.%N)
+    HOUR=$(echo "(($END-$START)/3600)"|bc)
+    MIN=$(echo "(($END-$START)/60)%60"|bc)
+    SEC=$(echo "($END-$START)%60"|bc)
+
+    echoGreen "Elapsed time: $HOUR hr $MIN min $SEC sec"
+} # elapsedTime
+
+function pbBeginMsg { # $1 - Build variant
+	pb -s "Starting $1 build for $DEVICE @ $DATE"
+} # pbBeginMsg
+
+function pbErrorMsg {
+	# $1 - Build variant
+	# $2 - Where the build failed
+	pb -s "$1 build failed during $2 for $DEVICE" "$(elapsedTime)"
+	exit 1
+} # pbErrorMsg
+
+function pbSuccessMsg { # $1 - Build variant
+	pb -s "$1 build complete for $DEVICE" "$(elapsedTime)"
+} # pbSuccessMsg
+
+#
+# Building Functions
+#
+function setEnv {
+	echoStatus "Setting Environment"
+
+	if [ ! -f build/envsetup.sh ];
+	then
+		echoRed "Error setting up environment";
+		pbErrorMsg " " "Environment setup"
+	fi
+
+	. build/envsetup.sh >/dev/null 2>&1
+	
+	# Get AFH configs
+	if [ -e $AFH_CONFIG ]; then
+		AFH_SERVER=`sed -n '1p' $AFH_CONFIG`
+		AFH_USER=`sed -n '2p' $AFH_CONFIG`
+		AFH_PASS=`sed -n '3p' $AFH_CONFIG`
+	else
+		echoRed "AFH Config file not found!"
+	fi
+} # setEnv
+
+function syncTree {
+	echoStatus "Syncing repos"
+
+	reposync --force-sync || {
+		echoRed "Error syncing repo"
+		pbErrorMsg " " "Repo sync"
+	}
+} # syncTree
+
+function wipeTree {
+	echoStatus "Cleaning build directory"
+
+	rm -rf ~/cm13/.ccache > /dev/null 2>&1 || { echoRed "Error removing ccache"; pbErrorMsg " " "Ccache removal"; }
+	mka clean > /dev/null 2>&1 || { echoRed "Error making clean"; pbErrorMsg " " "Making Clean"; }
+	if ls $LOGS_DIR/*.log 1> /dev/null 2>&1; then
+		rm $LOGS_DIR/*.log
+	fi
+} # wipeTree
+
+function buildROM {
+	echoStatus "Starting ROM build"
+	lunch cm_$DEVICE-userdebug >/dev/null 2>&1
+	mka otapackage 2>&1 | tee $LOGS_DIR/$DEVICE-$DATE.log
+} # buildROM
+
+function uploadROM {
+	# Get latest ROM
+	ROM=`ls -t out/target/product/$DEVICE/*$DEVICE*.zip | head -n 1`
+	ROM_NAME=`cd out/target/product/$DEVICE/ && ls -t *$DEVICE*.zip | head -n 1`
+	echoStatus "Uploading $ROM to AFH"
+
+	sshpass -p $AFH_PASS scp -o StrictHostKeyChecking=no $ROM $AFH_USER@$AFH_SERVER:/
+	
+	# Pushbullet notify upload is complete
+	pb -s "ROM for $DEVICE uploaded to AndroidFileHost" "$ROM_NAME MD5: `md5sum $ROM | cut -d" " -f1`"
+} # uploadROM
+
+function verifyROM() {	
+	if [ -e $LOGS_DIR/$DEVICE-$DATE.log ]; then
+		if tail $LOGS_DIR/$DEVICE-$DATE.log | grep -q "make completed successfully"; then
+			# Send alert
+			pbSuccessMsg "ROM"
+
+			if [[ $RELEASE == 1 ]]; then
+				# Copy latest ota and target-files to repository
+				echo -e "${GRE}Copying OTA to repository${NC}"
+				cp `ls -t out/target/product/$DEVICE/*$DEVICE*.zip | head -1` $OUT_DIR
+			fi
+			return 0
+		fi
+	fi
+	pbErrorMsg "ROM" "Building"
+	exit 1
+} # verifyROM
+
+function buildKernel {
+
+} # buildKernel
+
+function uploadKernel {
+
+} # uploadKernel
+
+function verifyKernel {
+
+} # verifyKernel
+
+#
+# Trap handling
+#
+trap ctrl_c INT
+function ctrl_c() {
+	echoRed "** User aborted!!!"
+	pb -s "User aborted during $DEVICE build!"
+	exit 1
+}
+
+#
+# BEGIN SCRIPT
+#
+for var in "$@"
+do
+	case "$var" in
+		afh) AFH=1;;
+		both) BOTH=1;;
+		release) RELEASE=1;;
+		rom) ROM=1;;
+		sync) SYNC=1;;
+		wipe) WIPE=1;;
+		*) echo -e "${RED}Unknown parameter $var\n${NC}";;
+	esac
+done
+
+# Begin build script
+if [[ $ROM == 1 ]]; then
+	setEnv
+else
+	echo -e "${RED}Usage: $0 kernel rom sync wipe"
+	echo "	afh - Upload ROM to AFH FTP"
+	echo "	both - build for gsm and cdma (gsm only by default)"
+	echo "	release - copy ota to output dir"
+	echo "	rom - build ROM"
+	echo "	sync - Sync repos"
+	echo -e "	wipe - Clean build directory${NC}"
+	exit 1
+fi
+
+if [[ $SYNC == 1 ]]; then
+	syncTree
+fi
+
+if [[ $WIPE == 1 ]]; then 
+	wipeTree
+fi
+
+if [[ $ROM == 1 ]]; then
+	DEVICE=jfltegsm
+	START=$(date +%s.%N)
+	pbBeginMsg "ROM"
+	buildROM
+	verifyROM
+	if [[ $AFH == 1 ]]; then
+		uploadROM
+	fi
+
+	if [[ $BOTH == 1 ]]; then
+		DEVICE=jfltecdma
+		START=$(date +%s.%N)
+		pbBeginMsg "ROM"
+		buildROM
+		verifyROM
+		if [[ $AFH == 1 ]]; then
+			uploadROM
+		fi
+	fi
+fi
