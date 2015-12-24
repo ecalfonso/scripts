@@ -6,7 +6,7 @@ KERNEL_DATE=$(date +"%Y%m%d")
 
 # Initialize build variables
 AFH=0		# Upload to AFH
-ALL=0		# To build all jf variants
+BOTH=0		# To build jf CDMA or not 
 RELEASE=0	# To move output zips to final dir or not
 ROM=0		# Set to 1 to Build ROM
 SYNC=0		# Sync source
@@ -155,7 +155,7 @@ for var in "$@"
 do
 	case "$var" in
 		afh) AFH=1;;
-		all) ALL=1;;
+		both) BOTH=1;;
 		release) RELEASE=1;;
 		rom) ROM=1;;
 		sync) SYNC=1;;
@@ -170,7 +170,7 @@ if [[ $ROM == 1 ]]; then
 else
 	echo -e "${RED}Usage: $0 kernel rom sync wipe"
 	echo "	afh - Upload ROM to AFH FTP"
-	echo "	all - build for all variants"
+	echo "	both - build for gsm and cdma (gsm only by default)"
 	echo "	release - copy ota to output dir"
 	echo "	rom - build ROM"
 	echo "	sync - Sync repos"
@@ -187,18 +187,23 @@ if [[ $WIPE == 1 ]]; then
 fi
 
 if [[ $ROM == 1 ]]; then
-	# Build all variants
-	for DEVICE in \
-		jfltegsm \
-		jfltecdma
-		do
+	DEVICE=jfltegsm
+	START=$(date +%s.%N)
+	pbBeginMsg "ROM"
+	buildROM
+	checkROMMake
+	if [[ $AFH == 1 ]]; then
+		uploadROM
+	fi
 
+	if [[ $BOTH == 1 ]]; then
+		DEVICE=jfltecdma
 		START=$(date +%s.%N)
 		pbBeginMsg "ROM"
 		buildROM
-      		checkROMMake
+		checkROMMake
 		if [[ $AFH == 1 ]]; then
 			uploadROM
 		fi
-	done
+	fi
 fi
