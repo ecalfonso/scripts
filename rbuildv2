@@ -197,60 +197,52 @@ function ctrl_c() {
 #
 # BEGIN SCRIPT
 #
-while read -p "Build ROM, Kernel or Both?" cchoice
+while read -p "Build rom, kernel or both? " cchoice
 do
-	echo "Say rom, kernel or both"
-	case "$cchoice"
-		both ) KERNEL=1; ROM=1; break;;
-		kernel ) KERNEL=1; break;;
-		rom ) ROM=1; break;;
-		* ) echoRed "Invalid choice"
+	case "$cchoice" in
+		both) KERNEL=1; ROM=1; echoGreen "Building both"; break;;
+		kernel) KERNEL=1; echoGreen "Building Kernel only"; break;;
+		rom) ROM=1; echoGreen "Building ROM only"; break;;
+		*) echoRed "Invalid choice"
 	esac
 done
 
-while read -p "Build GSM, CDMA or both?" cchoice
+while read -p "Build cdma? (Default gsm only) " cchoice
 do
-	echo "Say gsm, cdma or both: "
-	case "$cchoice"
-		both ) CDMA=1; GSM=1; break;;
-		cdma ) CDMA=1; break;;
-		gsm ) GSM=1; break;;
-		* ) echoGreen "Invalid option"
+	case "$cchoice" in
+		cdma) CDMA=1; echoGreen "Building jfltecdma only"; break;;
+		*) GSM=1; echoGreen "Building jfltegsm only"; break;;
 	esac
 done
 
-while read -p "Sync source?" cchoice
+while read -p "Sync source? (yes/no) " cchoice
 do
-	echo "Say yes (default no): "
-	case "$cchoice"
-		y|yes ) SYNC=1; break;;
+	case "$cchoice" in 
+		y|yes ) SYNC=1; echoGreen "Will sync all repos"; break;;
 		* ) echoGreen "No sync"; break;;
 	esac
 done
 
-while read -p "Full wipe?" cchoice
+while read -p "Full wipe? (yes/no) " cchoice
 do
-	echo "Say yes (default no)"
-	case "$cchoice"
-		y|yes ) WIPE=1; break;;
+	case "$cchoice" in
+		y|yes ) WIPE=1; echoGreen "Will make clean before build"; break;;
 		* ) echoGreen "No wipe"; break;;
 	esac
 done
 
-while read -p "Copy to OTA repository?" cchoice
+while read -p "Copy to OTA repository? (yes/no) " cchoice
 do
-	echo "Say yes (default no): "
-	case "$cchoice"
-		y|yes ) RELEASE=1; break;;
+	case "$cchoice" in
+		y|yes ) RELEASE=1; echoGreen "Will copy do OTA repo"; break;;
 		* ) echoGreen "Skipping OTA repo copy"; break;;
 	esac
 done
 
-while read -p "Upload to AFH?" cchoice
+while read -p "Upload to AFH? (yes/no) " cchoice
 do
-	echo "Say yes (default no): "
-	case "$cchoice"
-		y|yes ) AFH=1; break;;
+	case "$cchoice" in
+		y|yes ) AFH=1; echoGreen "Will upload to AFH after build"; break;;
 		* ) echoGreen "Skipping AFH upload"; break;;
 	esac
 done
