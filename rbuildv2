@@ -56,7 +56,7 @@ function elapsedTime {
     MIN=$(echo "(($END-$START)/60)%60"|bc)
     SEC=$(echo "($END-$START)%60"|bc)
 
-    echoGreen "Elapsed time: $HOUR hr $MIN min $SEC sec"
+    echo  "Elapsed time: $HOUR hr $MIN min $SEC sec"
 } # elapsedTime
 
 function pbBeginMsg { # $1 - Build variant
@@ -98,6 +98,11 @@ function setEnv {
 	fi
 } # setEnv
 
+function extraCherryPick {
+	# Put extra Gerrit pulls here
+	cd packages/apps/Calendar/ && git fetch http://review.cyanogenmod.org/CyanogenMod/android_packages_apps_Calendar refs/changes/60/126360/1 && git cherry-pick FETCH_HEAD && croot || exit 1
+} # extraCherryPick()
+
 function syncTree {
 	echoStatus "Syncing repos"
 
@@ -105,6 +110,8 @@ function syncTree {
 		echoRed "Error syncing repo"
 		pbErrorMsg " " "Repo sync"
 	}
+
+	extraCherryPick
 } # syncTree
 
 function wipeTree {
@@ -119,6 +126,9 @@ function wipeTree {
 
 function buildROM {
 	echoStatus "Starting ROM build"
+	if [[ -e out/target/product/$DEVICE/system/build.prop ]]; then
+		rm out/target/product/$DEVICE/system/build.prop;
+	fi
 	lunch cm_$DEVICE-userdebug >/dev/null 2>&1
 	mka otapackage 2>&1 | tee $LOGS_DIR/$DEVICE-ROM-$DATE.log
 } # buildROM
@@ -129,22 +139,24 @@ function uploadROM {
 	ROM_NAME=`cd out/target/product/$DEVICE/ && ls -t *$DEVICE*.zip | head -n 1`
 	echoStatus "Uploading $ROM_NAME to AFH"
 
-	sshpass -p $AFH_PASS scp -o StrictHostKeyChecking=no $ROM_FILE $AFH_USER@$AFH_SERVER:/
+	sshpass -p $AFH_PASS scp -o StrictHostKeyChecking=no $ROM_FILE $AFH_USER@$AFH_SERVER:/ 1> /dev/null 2>&1
 	
 	# Pushbullet notify upload is complete
 	pb -s "ROM for $DEVICE uploaded to AndroidFileHost" "$ROM_NAME MD5: `md5sum $ROM_FILE | cut -d" " -f1`"
 } # uploadROM
 
 function verifyROM() {	
-	if [ -e $LOGS_DIR/$DEVICE-ROM-$DATE.log ] && tail $LOGS_DIR/$DEVICE-ROM-$DATE.log | grep -q "make completed successfully"; then
-		# Send alert
-		pbSuccessMsg "ROM"
-		if [[ $RELEASE == 1 ]]; then
-			# Copy latest ota and target-files to repository
-			echoGreen "Copying OTA to repository"
-			cp `ls -t out/target/product/$DEVICE/*$DEVICE*.zip | head -1` $OUT_DIR
+	if [ -e $LOGS_DIR/$DEVICE-ROM-$DATE.log ]; then
+		if tail $LOGS_DIR/$DEVICE-ROM-$DATE.log | grep -q "make completed successfully"; then
+			# Send alert
+			pbSuccessMsg "ROM"
+			if [[ $RELEASE == 1 ]]; then
+				# Copy latest ota and target-files to repository
+				echoGreen "Copying OTA to repository"
+				cp `ls -t out/target/product/$DEVICE/*$DEVICE*.zip | head -1` $OUT_DIR
+			fi
+			return 0
 		fi
-		return 0
 	fi
 	pbErrorMsg "ROM" "Building"
 	exit 1
@@ -153,7 +165,7 @@ function verifyROM() {
 function buildKernel {
 	echoStatus "Starting Kernel build"
 	lunch cm_$DEVICE-userdebug >/dev/null 2>&1
-	mka bootzip 2>&1 | tee $LOGS_DIR/$DEVICE-Kernel-$DATE.log
+	mka bootzip 2>&1 | tee -a $LOGS_DIR/$DEVICE-Kernel-$DATE.log
 } # buildKernel
 
 function uploadKernel {
@@ -163,22 +175,24 @@ function uploadKernel {
 
 	echoStatus "Uploading $KERNEL_NAME to AFH"
 	
-	sshpass -p $AFH_PASS scp -o StrictHostKeyChecking=no $KERNEL_FILE $AFH_USER@$AFH_SERVER:/
+	sshpass -p $AFH_PASS scp -o StrictHostKeyChecking=no $KERNEL_FILE $AFH_USER@$AFH_SERVER:/ 1> /dev/null 2>&1
 
 	# Pushbullet notify upload is complete
 	pb -s "Kernel for $DEVICE uploaded to AndroidFileHost" "$KERNEL_NAME MD5: `md5sum $KERNEL_FILE | cut -d" " -f1`"
 } # uploadKernel
 
 function verifyKernel {
-	if [ -e $LOGS_DIR/$DEVICE-$DATE.log ] && tail $LOGS_DIR/$DEVICE-Kernel-$DATE.log | grep -q "make completed successfully"; then
-		# Send alert
-		pbSuccessMsg "Kernel"
-		if [[ $RELEASE == 1 ]]; then
-			# Copy latest Kernel to repository
-			echoGreen "Copying Kernel to repository"
-			cp `ls -t out/target/product/$DEVICE/*jflte-kernel*.zip | head -1` $OUT_DIR
+	if [ -e $LOGS_DIR/$DEVICE-Kernel-$DATE.log ]; then
+		if tail $LOGS_DIR/$DEVICE-Kernel-$DATE.log | grep -q "make completed successfully" ; then
+			# Send alert
+			pbSuccessMsg "Kernel"
+			if [[ $RELEASE == 1 ]]; then
+				# Copy latest Kernel to repository
+				echoGreen "Copying Kernel to repository"
+				cp `ls -t out/target/product/$DEVICE/*jflte-kernel*.zip | head -1` $OUT_DIR
+			fi
+			return 0
 		fi
-		return 0
 	fi
 	pbErrorMsg "Kernel" "Building"
 	exit 1
@@ -189,7 +203,7 @@ function verifyKernel {
 #
 trap ctrl_c INT
 function ctrl_c() {
-	echoRed "** User aborted!!!"
+	echoRed "** User aborted!!!\n"
 	pb -s "User aborted during $DEVICE build!"
 	exit 1
 }
@@ -200,50 +214,50 @@ function ctrl_c() {
 while read -p "Build rom, kernel or both? " cchoice
 do
 	case "$cchoice" in
-		both) KERNEL=1; ROM=1; echoGreen "Building both"; break;;
-		kernel) KERNEL=1; echoGreen "Building Kernel only"; break;;
-		rom) ROM=1; echoGreen "Building ROM only"; break;;
+		b|both) KERNEL=1; ROM=1; echoGreen "Building both\n"; break;;
+		k|kernel) KERNEL=1; echoGreen "Building Kernel only\n"; break;;
+		r|rom) ROM=1; echoGreen "Building ROM only\n"; break;;
 		*) echoRed "Invalid choice"
 	esac
 done
 
-while read -p "Build cdma? (Default gsm only) " cchoice
+while read -p "Build cdma also? (say cdma) " cchoice
 do
 	case "$cchoice" in
-		cdma) CDMA=1; echoGreen "Building jfltecdma only"; break;;
-		*) GSM=1; echoGreen "Building jfltegsm only"; break;;
+		c|cdma) CDMA=1; GSM=1; echoGreen "Building jfltegsm and jfltecdma\n"; break;;
+		*) GSM=1; echoGreen "Building jfltegsm only\n"; break;;
 	esac
 done
 
-while read -p "Sync source? (yes/no) " cchoice
+while read -p "Sync source? (say sync) " cchoice
 do
 	case "$cchoice" in 
-		y|yes ) SYNC=1; echoGreen "Will sync all repos"; break;;
-		* ) echoGreen "No sync"; break;;
+		s|sync ) SYNC=1; echoGreen "Will sync all repos\n"; break;;
+		* ) echoGreen "No sync\n"; break;;
 	esac
 done
 
-while read -p "Full wipe? (yes/no) " cchoice
+while read -p "Full wipe? (say wipe) " cchoice
 do
 	case "$cchoice" in
-		y|yes ) WIPE=1; echoGreen "Will make clean before build"; break;;
-		* ) echoGreen "No wipe"; break;;
+		wipe ) WIPE=1; echoGreen "Will make clean before build\n"; break;;
+		* ) echoGreen "No wipe\n"; break;;
 	esac
 done
 
 while read -p "Copy to OTA repository? (yes/no) " cchoice
 do
 	case "$cchoice" in
-		y|yes ) RELEASE=1; echoGreen "Will copy do OTA repo"; break;;
-		* ) echoGreen "Skipping OTA repo copy"; break;;
+		y|yes ) RELEASE=1; echoGreen "Will copy do OTA repo\n"; break;;
+		* ) echoGreen "Skipping OTA repo copy\n"; break;;
 	esac
 done
 
 while read -p "Upload to AFH? (yes/no) " cchoice
 do
 	case "$cchoice" in
-		y|yes ) AFH=1; echoGreen "Will upload to AFH after build"; break;;
-		* ) echoGreen "Skipping AFH upload"; break;;
+		y|yes ) AFH=1; echoGreen "Will upload to AFH after build\n"; break;;
+		* ) echoGreen "Skipping AFH upload\n"; break;;
 	esac
 done
 
@@ -270,8 +284,8 @@ if [[ $ROM == 1 ]]; then
 		DEVICE=jfltegsm
 		START=$(date +%s.%N)
 		pbBeginMsg "ROM"
-		buildROM
-		verifyROM
+		buildROM 
+		verifyROM 
 		if [[ $AFH == 1 ]]; then
 			uploadROM
 		fi
@@ -281,8 +295,8 @@ if [[ $ROM == 1 ]]; then
 		DEVICE=jfltecdma
 		START=$(date +%s.%N)
 		pbBeginMsg "ROM"
-		buildROM
-		verifyROM
+		buildROM 
+		verifyROM 
 		if [[ $AFH == 1 ]]; then
 			uploadROM
 		fi
@@ -292,9 +306,10 @@ fi
 if [[ $KERNEL == 1 ]]; then
 	DEVICE=jfltegsm
 	START=$(date +%s.%N)
+	pbBeginMsg "Kernel"
 	buildKernel
 	verifyKernel
 	if [[ $AFH == 1 ]]; then
-		uploadKernel
+		uploadKernel 
 	fi
 fi

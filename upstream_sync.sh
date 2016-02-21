@@ -40,7 +40,7 @@ function mergeUp() {
 	else
 		git merge --no-edit upstream/$BRANCH &>/dev/null
 		if [[ ! $? -eq 0 ]]; then
-			redEcho "	Error fetching!"
+			redEcho "	Error Merging!"
 			return 1
 		fi
 		echo -e "	Merged to upstream"
@@ -56,7 +56,7 @@ function pushUp() {
 	else
 		git push &>/dev/null
 		if [[ ! $? -eq 0 ]]; then
-			redEcho "	Error fetching!"
+			redEcho "	Error Pushing!"
 			return 1
 		fi
 		echo -e "	Pushed to origin!"
@@ -67,7 +67,7 @@ function pushUp() {
 # ____ Begin script ____
 for repo in `ls | grep android_`
 do
-	if [[ -e $repo/UPSTREAMS ]]
+	if [[ -e $repo/UPSTREAMS ]] && grep -q "cm-13.0" $repo/UPSTREAMS
 	then
 		# Enter repo dir
 		echo -e "${G}Checking $repo...${NC}"
@@ -75,6 +75,7 @@ do
 
 		# Get upstream branch
 		BRANCH=$(sed '1q;d' UPSTREAMS)
+		echo "	Branch: $BRANCH"
 
 		# Fetch, merge then push -- if no error
 		fetchUp $BRANCH
