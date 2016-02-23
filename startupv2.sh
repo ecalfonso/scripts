@@ -93,7 +93,7 @@ if ! grep -q "USE_CCACHE" ~/.bashrc; then
 fi
 
 if ! grep -q "ANDROID_CCACHE_DIR" ~/.bashrc; then
-        echo 'export ANDROID_CCACHE_DIR="$CM_DIR/.ccache"' >> ~/.bashrc
+        echo "export ANDROID_CCACHE_DIR=\"$CM_DIR/.ccache\"" >> ~/.bashrc
 fi
 
 if ! grep -q "ANDROID_CCACHE_SIZE" ~/.bashrc; then
