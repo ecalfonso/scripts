@@ -1,6 +1,21 @@
 #!/bin/bash
 
 #
+# Set up Static IP
+#
+head -n -3 /etc/network/interfaces > tmp
+
+ETH=`ifconfig -a | grep eth | cut -d " " -f 1`
+sudo echo "auto $ETH" >> tmp
+sudo echo "iface $ETH inet static" >> tmp
+sudo echo "address 192.168.0.232" >> tmp
+sudo echo "netmask 255.255.255.0" >> tmp
+sudo echo "gateway 192.168.0.1" >> tmp
+sudo echo "dns-nameservers 8.8.8.8 4.4.4.4" >> tmp
+
+sudo mv tmp /etc/network/interfaces
+
+#
 # Install Packages
 #
 
