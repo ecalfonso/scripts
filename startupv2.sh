@@ -15,7 +15,7 @@ sudo apt-get install -y --fix-missing g++-multilib gcc-multilib lib32ncurses5-de
 sudo apt-get install -y --fix-missing python-dev liblzma-dev
 
 # Packages I need to have
-sudo apt-get install -y --fix-missing openssh-server git tmux curl openjdk-7-jdk vim
+sudo apt-get install -y --fix-missing openssh-server git tmux curl openjdk-7-jdk vim sshpass
 
 #
 # Setting up my directories
