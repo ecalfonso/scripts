@@ -99,3 +99,10 @@ fi
 if ! grep -q "ANDROID_CCACHE_SIZE" ~/.bashrc; then
         echo 'export ANDROID_CCACHE_SIZE="100G"' >> ~/.bashrc
 fi
+
+#
+# Set up local http site
+#
+sudo apt-get install -y apache2
+sudo rm /var/www/html/index.html
+sudo ln -s ~/Android/ /var/www/html/Android
